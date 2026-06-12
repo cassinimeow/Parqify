@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #fafafa;
+  --foreground: #111827;
+  --font-sans: var(--font-sans);
+  --font-outfit: var(--font-outfit);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f0a0a;
+    --foreground: #f9fafb;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* PUP Manila Maroon Tonal Palette */
+  --color-brand-maroon-50: #fdf2f2;
+  --color-brand-maroon-100: #fde8e8;
+  --color-brand-maroon-200: #fbd5d5;
+  --color-brand-maroon-300: #f8b4b4;
+  --color-brand-maroon-400: #f38080;
+  --color-brand-maroon-500: #e02424;
+  --color-brand-maroon-600: #c81e1e;
+  --color-brand-maroon-700: #9b1c1c;
+  --color-brand-maroon-800: #800000; /* Official PUP Maroon */
+  --color-brand-maroon-900: #610000;
+  --color-brand-maroon-950: #3b0000;
+
+  /* PUP Manila Gold Tonal Palette */
+  --color-brand-gold-50: #fefdf0;
+  --color-brand-gold-100: #fefbe1;
+  --color-brand-gold-200: #fdf7c3;
+  --color-brand-gold-300: #fcf197;
+  --color-brand-gold-400: #fae65d;
+  --color-brand-gold-500: #f4d01a;
+  --color-brand-gold-600: #d4af37; /* Official PUP Gold */
+  --color-brand-gold-700: #b08d27;
+  --color-brand-gold-800: #8d6b1d;
+  --color-brand-gold-900: #715316;
+  --color-brand-gold-950: #4a330a;
+
+  /* Font Families */
+  --font-sans: var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-outfit: var(--font-outfit), var(--font-sans), sans-serif;
 }
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  min-height: 100vh;
+}
+
