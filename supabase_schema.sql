@@ -7,6 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name TEXT NOT NULL,
+    email TEXT UNIQUE, -- Links to Supabase Auth user email
     pup_id TEXT UNIQUE NOT NULL, -- Student or Employee ID
     rfid_tag TEXT UNIQUE, -- Unique RFID chip ID
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
