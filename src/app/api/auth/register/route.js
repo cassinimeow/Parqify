@@ -43,8 +43,15 @@ export async function POST(request) {
     });
 
     if (result.error) {
+      let errorMessage = result.error;
+      const lowerError = errorMessage.toLowerCase();
+      
+      if (lowerError.includes('already registered') || lowerError.includes('already exists') || lowerError.includes('duplicate key') || lowerError.includes('unique constraint')) {
+        errorMessage = 'Account is already existing';
+      }
+
       return NextResponse.json(
-        { error: result.error },
+        { error: errorMessage },
         { status: 400 }
       );
     }

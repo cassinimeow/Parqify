@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     email TEXT UNIQUE, -- Links to Supabase Auth user email
     pup_id TEXT UNIQUE NOT NULL, -- Student or Employee ID
     rfid_tag TEXT UNIQUE, -- Unique RFID chip ID
+    avatar_url TEXT, -- URL for the user's uploaded profile picture
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -62,5 +63,28 @@ CREATE POLICY "Allow public update slots" ON public.parking_slots FOR UPDATE USI
 CREATE POLICY "Allow public read tickets" ON public.tickets FOR SELECT USING (true);
 CREATE POLICY "Allow public insert tickets" ON public.tickets FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update tickets" ON public.tickets FOR UPDATE USING (true);
+
+-- ----------------------------------------------------
+-- 5. STORAGE BUCKETS
+-- ----------------------------------------------------
+-- Note: You may need to run this as a superuser or manually create the bucket in the Supabase Dashboard
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true) ON CONFLICT DO NOTHING;
+
+-- Set up RLS for storage (allow public viewing of avatars, but only authenticated users can modify their own)
+CREATE POLICY "Avatar images are publicly accessible."
+  ON storage.objects FOR SELECT
+  USING ( bucket_id = 'avatars' );
+
+CREATE POLICY "Users can upload their own avatar."
+  ON storage.objects FOR INSERT
+  WITH CHECK ( bucket_id = 'avatars' AND auth.uid() = owner );
+
+CREATE POLICY "Users can update their own avatar."
+  ON storage.objects FOR UPDATE
+  USING ( auth.uid() = owner );
+
+CREATE POLICY "Users can delete their own avatar."
+  ON storage.objects FOR DELETE
+  USING ( auth.uid() = owner );
 
 -- ----------------------------------------------------

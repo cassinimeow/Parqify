@@ -60,9 +60,15 @@ export default function DashboardPage() {
   const greeting = getGreeting();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-maroon-50/50 via-white to-brand-gold-50/50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
+    <div className="min-h-screen bg-gradient-to-br from-brand-maroon-50/50 via-white to-brand-gold-50/50 dark:from-brand-maroon-950 dark:via-[#09090b] dark:to-brand-gold-950 relative overflow-hidden">
+      {/* Dark Mode Background Accents */}
+      <div className="absolute inset-0 pointer-events-none hidden dark:block">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-brand-maroon-900/20 blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-brand-gold-900/10 blur-[100px]" />
+      </div>
+
       {/* Top Navigation */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-zinc-950/70 border-b border-gray-100 dark:border-zinc-800/50">
+      <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-white/70 dark:bg-black/40 border-b border-gray-100 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 flex items-center justify-center shadow-md shadow-brand-maroon-800/20">
@@ -78,6 +84,13 @@ export default function DashboardPage() {
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-xs font-semibold text-brand-gold-800 dark:text-brand-gold-400">Online</span>
             </div>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/settings')}>
+              <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+              Settings
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={isLoggingOut}>
               <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
@@ -91,16 +104,23 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Welcome Section */}
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-brand-maroon-800 dark:text-brand-maroon-400 uppercase tracking-wider">
-            {greeting}
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white">
-            {displayName}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Welcome to your parking dashboard. Here&apos;s your overview.
-          </p>
+        <div className="flex items-center gap-5">
+          {profile?.avatar_url && (
+            <div className="w-20 h-20 rounded-full border-4 border-white dark:border-zinc-900 shadow-lg overflow-hidden shrink-0">
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover select-none" onContextMenu={(e) => e.preventDefault()} draggable={false} />
+            </div>
+          )}
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-brand-maroon-800 dark:text-brand-maroon-400 uppercase tracking-wider">
+              {greeting}
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white">
+              {displayName}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              Welcome to your parking dashboard. Here&apos;s your overview.
+            </p>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -172,9 +192,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">Find Parking</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Browse available parking lots and reserve a slot</p>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">Browse available parking lots and reserve a slot</p>
                   </div>
-                  <svg className="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-5 h-5 text-gray-300 dark:text-zinc-500 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                   </svg>
                 </div>
@@ -192,9 +212,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">My Tickets</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">View your parking tickets and session history</p>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">View your parking tickets and session history</p>
                   </div>
-                  <svg className="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-5 h-5 text-gray-300 dark:text-zinc-500 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                   </svg>
                 </div>
@@ -210,12 +230,12 @@ export default function DashboardPage() {
             <CardContent className="p-8">
               <div className="flex flex-col items-center justify-center text-center space-y-3">
                 <div className="w-16 h-16 rounded-2xl bg-gray-50 dark:bg-zinc-800/50 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                  <svg className="w-8 h-8 text-gray-300 dark:text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                   </svg>
                 </div>
-                <p className="text-sm font-semibold text-gray-400 dark:text-gray-500">No recent activity</p>
-                <p className="text-xs text-gray-400 dark:text-gray-600">Your parking history will appear here</p>
+                <p className="text-sm font-semibold text-gray-400 dark:text-zinc-400">No recent activity</p>
+                <p className="text-xs text-gray-400 dark:text-zinc-500">Your parking history will appear here</p>
               </div>
             </CardContent>
           </Card>
@@ -223,12 +243,12 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-gray-100 dark:border-zinc-800/50">
+      <footer className="mt-auto border-t border-gray-100 dark:border-white/10 relative z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-gray-400 dark:text-gray-600">
+          <p className="text-xs text-gray-400 dark:text-zinc-500">
             © 2025 Parqify — PUP Manila Community Parking System
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-600">
+          <p className="text-xs text-gray-400 dark:text-zinc-500">
             {profile?.email || user?.email || ''}
           </p>
         </div>

@@ -7,7 +7,7 @@ let _supabase = null;
  * This prevents build-time crashes when env vars are not yet configured.
  */
 export function getSupabase() {
-  if (!_supabase) {
+  if (!globalThis._supabaseInstance) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -15,13 +15,12 @@ export function getSupabase() {
       console.warn(
         'Supabase credentials are missing. Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.'
       );
-      // Return a dummy object during build to prevent crashes
       return null;
     }
 
-    _supabase = createClient(supabaseUrl, supabaseAnonKey);
+    globalThis._supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
   }
-  return _supabase;
+  return globalThis._supabaseInstance;
 }
 
 // Backward-compatible export — use getSupabase() in new code

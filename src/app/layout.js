@@ -1,4 +1,5 @@
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const sansFont = Plus_Jakarta_Sans({
@@ -23,9 +24,12 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={`${sansFont.variable} ${outfitFont.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

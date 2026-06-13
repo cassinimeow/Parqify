@@ -8,6 +8,24 @@ import { getSupabase } from './supabase';
 export async function registerUser({ email, password, fullName, pupId }) {
   const supabase = getSupabase();
 
+  // Step 0: Check if email or pup_id already exists in public.users to prevent ghost auth accounts
+  const { data: existingUsers } = await supabase
+    .from('users')
+    .select('email, pup_id')
+    .or(`email.eq.${email},pup_id.eq.${pupId}`)
+    .limit(1);
+
+  if (existingUsers && existingUsers.length > 0) {
+    const existing = existingUsers[0];
+    if (existing.email === email) {
+      return { error: 'Account with this email already exists' };
+    }
+    if (existing.pup_id === pupId) {
+      return { error: 'Account with this PUP ID already exists' };
+    }
+    return { error: 'Account is already existing' };
+  }
+
   // Step 1: Sign up with Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,

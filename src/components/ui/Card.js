@@ -6,7 +6,7 @@ import React from 'react';
 export function Card({ children, className = '', ...props }) {
   return (
     <div
-      className={`bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800/80 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ${className}`}
+      className={`bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/10 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 dark:backdrop-blur-xl ${className}`}
       {...props}
     >
       {children}
@@ -58,7 +58,7 @@ export function CardContent({ children, className = '', ...props }) {
 export function CardFooter({ children, className = '', ...props }) {
   return (
     <div
-      className={`flex items-center p-6 pt-0 border-t border-gray-50 dark:border-zinc-800/50 mt-4 ${className}`}
+      className={`flex items-center p-6 pt-0 border-t border-gray-50 dark:border-white/10 mt-4 ${className}`}
       {...props}
     >
       {children}
