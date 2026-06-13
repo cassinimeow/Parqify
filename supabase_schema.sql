@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. USERS TABLE
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     email TEXT UNIQUE, -- Links to Supabase Auth user email
     pup_id TEXT UNIQUE NOT NULL, -- Student or Employee ID
@@ -64,35 +64,3 @@ CREATE POLICY "Allow public insert tickets" ON public.tickets FOR INSERT WITH CH
 CREATE POLICY "Allow public update tickets" ON public.tickets FOR UPDATE USING (true);
 
 -- ----------------------------------------------------
--- SEED DATA FOR TESTING IN PUP MANILA
--- ----------------------------------------------------
-
--- Insert Parking Lots
-INSERT INTO public.parking_lots (id, name, total_slots) VALUES
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'PUP Main Campus Lot', 10),
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'PUP CEA Campus Lot', 6)
-ON CONFLICT (name) DO NOTHING;
-
--- Insert Slots for PUP Main Campus Lot (A-1 to A-10)
-INSERT INTO public.parking_slots (lot_id, slot_name, status) VALUES
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-1', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-2', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-3', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-4', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-5', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-6', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-7', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-8', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-9', 'AVAILABLE'),
-('a3e21820-2a78-43b9-a9a3-5c0293ee0991', 'A-10', 'AVAILABLE')
-ON CONFLICT (lot_id, slot_name) DO NOTHING;
-
--- Insert Slots for PUP CEA Campus Lot (B-1 to B-6)
-INSERT INTO public.parking_slots (lot_id, slot_name, status) VALUES
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'B-1', 'AVAILABLE'),
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'B-2', 'AVAILABLE'),
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'B-3', 'AVAILABLE'),
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'B-4', 'AVAILABLE'),
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'B-5', 'AVAILABLE'),
-('b3e21820-2a78-43b9-a9a3-5c0293ee0992', 'B-6', 'AVAILABLE')
-ON CONFLICT (lot_id, slot_name) DO NOTHING;

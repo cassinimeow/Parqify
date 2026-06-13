@@ -107,7 +107,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Active Session */}
           <Card className="border-0 shadow-lg shadow-brand-maroon-100/20 dark:shadow-black/10 bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 text-white">
-            <CardContent className="p-6">
+            <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
 
           {/* PUP ID */}
           <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10">
-            <CardContent className="p-6">
+            <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-brand-gold-50 dark:bg-brand-gold-950/30 flex items-center justify-center">
                   <svg className="w-5 h-5 text-brand-gold-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
 
           {/* Account Status */}
           <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10">
-            <CardContent className="p-6">
+            <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
                   <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -162,7 +162,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Find Parking CTA */}
             <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200">
-              <CardContent className="p-6">
+              <CardContent className="p-6 !pt-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-maroon-800 to-brand-gold-600 flex items-center justify-center shrink-0 shadow-lg shadow-brand-maroon-800/20 group-hover:shadow-xl transition-shadow">
                     <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
 
             {/* View Ticket */}
             <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200">
-              <CardContent className="p-6">
+              <CardContent className="p-6 !pt-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-gold-500 to-brand-gold-700 flex items-center justify-center shrink-0 shadow-lg shadow-brand-gold-600/20 group-hover:shadow-xl transition-shadow">
                     <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

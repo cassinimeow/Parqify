@@ -20,8 +20,25 @@ export default function LoginPage() {
     password: '',
   });
 
+  function formatPUPID(value) {
+    const cleanValue = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const limitedValue = cleanValue.slice(0, 12);
+    let formatted = '';
+    for (let i = 0; i < limitedValue.length; i++) {
+      if (i === 4 || i === 9 || i === 11) {
+        formatted += '-';
+      }
+      formatted += limitedValue[i];
+    }
+    return formatted;
+  }
+
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    let { name, value } = e.target;
+    if (name === 'pup_id') {
+      value = formatPUPID(value);
+    }
+    setForm({ ...form, [name]: value });
     setError('');
   }
 
@@ -51,7 +68,7 @@ export default function LoginPage() {
       }
 
       if (isSignUp) {
-        setSuccess('Account created! You can now sign in.');
+        setSuccess('Account created! Please check your email to confirm your account before signing in.');
         setIsSignUp(false);
         setForm({ ...form, full_name: '', pup_id: '', password: '' });
       } else {
@@ -148,6 +165,7 @@ export default function LoginPage() {
                     value={form.pup_id}
                     onChange={handleChange}
                     required
+                    maxLength={15}
                     icon={
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />
