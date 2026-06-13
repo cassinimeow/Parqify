@@ -54,12 +54,12 @@ Here is the chronological sequence of tasks to build the system from start to fi
   - Setup reusable UI components (Buttons, Cards, Inputs).
 
 ### Phase 2: Core Authentication & Dashboard
-- [ ] **Task 2.1: Auth Backend** (Elizander)
+- [x] **Task 2.1: Auth Backend** (Elizander)
   - Implement login/registration API endpoints.
-- [ ] **Task 2.2: Auth Frontend** (Christian)
+- [x] **Task 2.2: Auth Frontend** (Christian)
   - Build Login and Registration UI (`/login`).
   - Connect UI to backend Auth endpoints.
-- [ ] **Task 2.3: Home Dashboard** (Christian)
+- [x] **Task 2.3: Home Dashboard** (Christian)
   - Build Dashboard UI (`/dashboard`).
   - Fetch and display basic user data and active ticket status.
 
