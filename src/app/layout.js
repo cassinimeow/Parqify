@@ -1,4 +1,5 @@
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const sansFont = Plus_Jakarta_Sans({
@@ -25,9 +26,12 @@ export default function RootLayout({ children }) {
       className={`${sansFont.variable} ${outfitFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
 
