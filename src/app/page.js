@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
@@ -83,7 +82,7 @@ export default function Home() {
         </div>
 
         {/* Tab Toggle Navigation */}
-        <nav className="flex items-center bg-brand-maroon-950/60 p-1 rounded-lg border border-brand-maroon-800/80 gap-1">
+        <nav className="flex bg-brand-maroon-950/60 p-1 rounded-lg border border-brand-maroon-800/80">
           <button
             onClick={() => setActiveTab('design-system')}
             className={`px-4 py-1.5 rounded-md text-xs font-semibold font-sans transition-all duration-200 ${
@@ -104,19 +103,6 @@ export default function Home() {
           >
             Wireframe Prototype
           </button>
-          <div className="h-4 w-px bg-brand-maroon-800/80 mx-1"></div>
-          <Link
-            href="/login"
-            className="px-4 py-1.5 rounded-md text-xs font-semibold font-sans text-brand-gold-400 hover:text-white hover:bg-brand-maroon-850/40 transition-all duration-200"
-          >
-            Sign In Portal
-          </Link>
-          <Link
-            href="/dashboard"
-            className="px-4 py-1.5 rounded-md text-xs font-semibold font-sans text-brand-gold-400 hover:text-white hover:bg-brand-maroon-850/40 transition-all duration-200"
-          >
-            Dashboard
-          </Link>
         </nav>
       </header>
 
