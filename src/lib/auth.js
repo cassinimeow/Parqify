@@ -6,7 +6,7 @@ import { getSupabase } from './supabase';
  * @returns {{ user: object, session: object } | { error: string }}
  */
 export async function registerUser({ email, password, fullName, pupId }) {
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
 
   // Step 0: Check if email or pup_id already exists in public.users to prevent ghost auth accounts
   const { data: existingUsers } = await supabase
@@ -66,7 +66,7 @@ export async function registerUser({ email, password, fullName, pupId }) {
  * @returns {{ user: object, session: object } | { error: string }}
  */
 export async function loginUser({ email, password }) {
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
 
   // Step 1: Check if the user exists in our public schema to provide better error messages
   const { data: existingUser } = await supabase
@@ -112,7 +112,7 @@ export async function loginUser({ email, password }) {
  * @returns {{ success: boolean } | { error: string }}
  */
 export async function logoutUser() {
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.signOut();
 
   if (error) {
@@ -127,7 +127,7 @@ export async function logoutUser() {
  * @returns {{ user: object, profile: object } | { error: string }}
  */
 export async function getCurrentUser() {
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {

@@ -9,7 +9,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { lot_id, slot_name, status } = body;
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     
     if (!lot_id || !slot_name) {
       return NextResponse.json({ error: 'lot_id and slot_name are required' }, { status: 400 });
@@ -47,7 +47,7 @@ export async function DELETE(request) {
     const { id } = body;
     if (!id) return NextResponse.json({ error: 'Slot ID is required' }, { status: 400 });
 
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     
     // Get the lot_id before deleting so we can decrement its count
     const { data: slotToDelete } = await supabase.from('parking_slots').select('lot_id').eq('id', id).single();

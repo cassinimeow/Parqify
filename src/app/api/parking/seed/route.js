@@ -7,7 +7,7 @@ import { getSupabase } from '@/lib/supabase';
  */
 export async function POST() {
   try {
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     if (!supabase) {
       return NextResponse.json({ error: 'Supabase client not initialized' }, { status: 500 });
     }

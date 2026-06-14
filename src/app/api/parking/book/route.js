@@ -29,7 +29,7 @@ export async function POST(request) {
       );
     }
 
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
 
     // 2. Check if the slot is actually AVAILABLE
     const { data: slotData, error: slotError } = await supabase

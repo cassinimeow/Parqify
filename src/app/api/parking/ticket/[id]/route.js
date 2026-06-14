@@ -4,21 +4,21 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/user/tickets
- * Returns the current user's parking tickets (active and history).
- */
-export async function GET() {
+export async function GET(request, { params }) {
   try {
     const { user, error: authError } = await getCurrentUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const ticketId = params.id;
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 });
+    }
+
     const supabase = await getSupabase();
     
-    // Fetch tickets with joined slot and lot data
-    const { data: tickets, error } = await supabase
+    const { data: ticket, error } = await supabase
       .from('tickets')
       .select(`
         id, 
@@ -27,24 +27,25 @@ export async function GET() {
         exit_time, 
         created_at,
         parking_slots (
+          id,
           slot_name,
+          status,
           parking_lots (
+            id,
             name
           )
         )
       `)
+      .eq('id', ticketId)
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error || !ticket) {
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ tickets });
+    return NextResponse.json({ ticket });
   } catch (err) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

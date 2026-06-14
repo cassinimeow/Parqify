@@ -17,7 +17,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     
     const updates = {};
     if (email) updates.email = email;

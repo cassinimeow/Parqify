@@ -16,19 +16,20 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchUserAndTickets() {
       try {
-        const res = await fetch('/api/auth/me');
-        const data = await res.json();
+        const [res, ticketsRes] = await Promise.all([
+          fetch('/api/auth/me'),
+          fetch('/api/user/tickets')
+        ]);
 
         if (!res.ok) {
           router.push('/login');
           return;
         }
 
+        const data = await res.json();
         setUser(data.user);
         setProfile(data.profile);
 
-        // Fetch tickets
-        const ticketsRes = await fetch('/api/user/tickets');
         if (ticketsRes.ok) {
           const ticketsData = await ticketsRes.json();
           setTickets(ticketsData.tickets || []);

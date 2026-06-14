@@ -42,20 +42,32 @@ export default function ParkingPage() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const res = await fetch('/api/auth/me');
-        const data = await res.json();
-        if (!res.ok) {
+        const [meRes, lotsRes, ticketRes] = await Promise.all([
+          fetch('/api/auth/me'),
+          fetch('/api/parking/lots'),
+          fetch('/api/user/tickets', { cache: 'no-store' })
+        ]);
+
+        if (!meRes.ok) {
           router.push('/login');
           return;
         }
-        setUser(data.user);
-        setProfile(data.profile);
 
-        // Fetch user's active ticket
-        const ticketRes = await fetch('/api/user/tickets', { cache: 'no-store' });
-        const ticketData = await ticketRes.json();
-        if (ticketRes.ok && ticketData.tickets) {
-          const active = ticketData.tickets.find(t => t.status === 'ACTIVE');
+        const meData = await meRes.json();
+        setUser(meData.user);
+        setProfile(meData.profile);
+
+        if (lotsRes.ok) {
+          const lotsData = await lotsRes.json();
+          setLots(lotsData.lots || []);
+          if (lotsData.lots && lotsData.lots.length > 0) {
+            setSelectedLot(lotsData.lots[0]);
+          }
+        }
+
+        if (ticketRes.ok) {
+          const ticketData = await ticketRes.json();
+          const active = ticketData.tickets?.find(t => t.status === 'ACTIVE');
           setActiveTicket(active || null);
         }
       } catch (err) {

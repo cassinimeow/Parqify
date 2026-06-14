@@ -7,7 +7,7 @@ import { getSupabase } from '@/lib/supabase';
  */
 export async function GET() {
   try {
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     
     const { data: lots, error } = await supabase
       .from('parking_lots')
@@ -47,7 +47,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { name, total_slots } = body;
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     
     if (!name || total_slots === undefined) {
       return NextResponse.json({ error: 'Name and total_slots are required' }, { status: 400 });
@@ -97,7 +97,7 @@ export async function DELETE(request) {
     const { id } = body;
     if (!id) return NextResponse.json({ error: 'Lot ID is required' }, { status: 400 });
 
-    const supabase = getSupabase();
+    const supabase = await getSupabase();
     const { error } = await supabase.from('parking_lots').delete().eq('id', id);
 
     if (error) {
