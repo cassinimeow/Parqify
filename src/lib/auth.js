@@ -68,12 +68,28 @@ export async function registerUser({ email, password, fullName, pupId }) {
 export async function loginUser({ email, password }) {
   const supabase = getSupabase();
 
+  // Step 1: Check if the user exists in our public schema to provide better error messages
+  const { data: existingUser } = await supabase
+    .from('users')
+    .select('email')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (!existingUser) {
+    return { error: 'Account with this email does not exist. Please sign up first.' };
+  }
+
+  // Step 2: Attempt to sign in
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
+    // Since we know the email exists, a generic 'Invalid login credentials' means the password is wrong
+    if (error.message === 'Invalid login credentials') {
+      return { error: 'Incorrect password. Please try again.' };
+    }
     return { error: error.message };
   }
 

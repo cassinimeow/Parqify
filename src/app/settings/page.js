@@ -162,7 +162,10 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
-        <div className="w-8 h-8 border-3 border-brand-maroon-800 border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-brand-maroon-800 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-sans">Loading your account preferences...</p>
+        </div>
       </div>
     );
   }
@@ -171,16 +174,32 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-12">
       {/* Simple Header */}
       <nav className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-4">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold font-outfit text-gray-900 dark:text-white">Account Settings</h1>
+        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+            </button>
+            <h1 className="text-xl font-bold font-outfit text-gray-900 dark:text-white">Account Settings</h1>
+          </div>
+          <div className="flex items-center gap-3 hidden sm:flex">
+            <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+              {profile?.full_name}
+            </span>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200 dark:border-white/10 object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-brand-maroon-50 dark:bg-zinc-800 flex items-center justify-center border border-brand-maroon-100 dark:border-white/10">
+                <span className="text-xs font-bold text-brand-maroon-800 dark:text-zinc-400">
+                  {(profile?.full_name || 'U').charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 

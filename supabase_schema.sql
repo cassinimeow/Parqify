@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     pup_id TEXT UNIQUE NOT NULL, -- Student or Employee ID
     rfid_tag TEXT UNIQUE, -- Unique RFID chip ID
     avatar_url TEXT, -- URL for the user's uploaded profile picture
+    is_admin BOOLEAN DEFAULT false, -- True if the user is an administrator
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -57,8 +58,13 @@ CREATE POLICY "Allow public insert users" ON public.users FOR INSERT WITH CHECK 
 CREATE POLICY "Allow public update users" ON public.users FOR UPDATE USING (true);
 
 CREATE POLICY "Allow public read lots" ON public.parking_lots FOR SELECT USING (true);
+CREATE POLICY "Allow public insert lots" ON public.parking_lots FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public delete lots" ON public.parking_lots FOR DELETE USING (true);
+
 CREATE POLICY "Allow public read slots" ON public.parking_slots FOR SELECT USING (true);
+CREATE POLICY "Allow public insert slots" ON public.parking_slots FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update slots" ON public.parking_slots FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete slots" ON public.parking_slots FOR DELETE USING (true);
 
 CREATE POLICY "Allow public read tickets" ON public.tickets FOR SELECT USING (true);
 CREATE POLICY "Allow public insert tickets" ON public.tickets FOR INSERT WITH CHECK (true);

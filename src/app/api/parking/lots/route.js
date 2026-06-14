@@ -26,3 +26,70 @@ export async function GET() {
     );
   }
 }
+
+/**
+ * POST /api/parking/lots
+ * Creates a new parking lot and generates default slots for it.
+ */
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { name, total_slots } = body;
+    const supabase = getSupabase();
+    
+    if (!name || total_slots === undefined) {
+      return NextResponse.json({ error: 'Name and total_slots are required' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('parking_lots')
+      .insert({ name, total_slots })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Auto-generate generic slots
+    const slotsToInsert = [];
+    for (let i = 1; i <= total_slots; i++) {
+      slotsToInsert.push({
+        lot_id: data.id,
+        slot_name: `S-${i}`,
+        status: 'AVAILABLE'
+      });
+    }
+    
+    if (slotsToInsert.length > 0) {
+      await supabase.from('parking_slots').insert(slotsToInsert);
+    }
+
+    return NextResponse.json({ lot: data }, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/parking/lots
+ * Deletes a parking lot.
+ */
+export async function DELETE(request) {
+  try {
+    const body = await request.json();
+    const { id } = body;
+    if (!id) return NextResponse.json({ error: 'Lot ID is required' }, { status: 400 });
+
+    const supabase = getSupabase();
+    const { error } = await supabase.from('parking_lots').delete().eq('id', id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

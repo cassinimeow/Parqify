@@ -7,7 +7,7 @@ import { getSupabase } from '@/lib/supabase';
  */
 export async function GET(request, { params }) {
   try {
-    const { lotId } = params;
+    const { lotId } = await params;
     const supabase = getSupabase();
     
     const { data: slots, error } = await supabase

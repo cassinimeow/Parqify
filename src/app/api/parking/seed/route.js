@@ -28,9 +28,8 @@ export async function POST() {
 
     // 2. Define default lots
     const defaultLots = [
-      { name: 'PUP Main Campus Lot A', total_slots: 12 },
-      { name: 'CEA Campus Lot B', total_slots: 16 },
-      { name: 'LRC Building Lot C', total_slots: 10 }
+      { name: 'PUP Main Campus Lot', total_slots: 12 },
+      { name: 'ITECH Campus Lot', total_slots: 16 }
     ];
 
     // Insert lots and get their IDs

@@ -188,7 +188,7 @@ export default function ParkingPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-3 border-brand-maroon-800 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-sans">Verifying your identity...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-sans">Loading campus parking zones...</p>
         </div>
       </div>
     );
@@ -229,6 +229,15 @@ export default function ParkingPage() {
             <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
               {profile?.full_name || user?.email}
             </span>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200 dark:border-white/10 object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-brand-maroon-50 dark:bg-zinc-800 flex items-center justify-center border border-brand-maroon-100 dark:border-white/10">
+                <span className="text-xs font-bold text-brand-maroon-800 dark:text-zinc-400">
+                  {(profile?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </nav>
