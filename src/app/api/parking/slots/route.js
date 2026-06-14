@@ -25,6 +25,12 @@ export async function POST(request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Increment lot total_slots
+    const { data: lotData } = await supabase.from('parking_lots').select('total_slots').eq('id', lot_id).single();
+    if (lotData) {
+      await supabase.from('parking_lots').update({ total_slots: lotData.total_slots + 1 }).eq('id', lot_id);
+    }
+
     return NextResponse.json({ slot: data }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -42,10 +48,22 @@ export async function DELETE(request) {
     if (!id) return NextResponse.json({ error: 'Slot ID is required' }, { status: 400 });
 
     const supabase = getSupabase();
+    
+    // Get the lot_id before deleting so we can decrement its count
+    const { data: slotToDelete } = await supabase.from('parking_slots').select('lot_id').eq('id', id).single();
+    
     const { error } = await supabase.from('parking_slots').delete().eq('id', id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Decrement lot total_slots
+    if (slotToDelete) {
+      const { data: lotData } = await supabase.from('parking_lots').select('total_slots').eq('id', slotToDelete.lot_id).single();
+      if (lotData) {
+        await supabase.from('parking_lots').update({ total_slots: Math.max(0, lotData.total_slots - 1) }).eq('id', slotToDelete.lot_id);
+      }
     }
 
     return NextResponse.json({ success: true });

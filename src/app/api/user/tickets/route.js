@@ -2,14 +2,16 @@ import { NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/user/tickets
  * Returns the current user's parking tickets (active and history).
  */
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
+    const { user, error: authError } = await getCurrentUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

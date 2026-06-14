@@ -82,10 +82,8 @@ export default function DashboardPage() {
       <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-white/70 dark:bg-black/40 border-b border-gray-100 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 flex items-center justify-center shadow-md shadow-brand-maroon-800/20">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-              </svg>
+            <div className="w-8 h-8 rounded-lg shadow-md overflow-hidden bg-white">
+              <img src="/parqify.ico" alt="Parqify Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-lg font-bold font-outfit tracking-tight text-gray-900 dark:text-white">Parqify</span>
           </div>
@@ -138,7 +136,7 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Active Session */}
-          <Card className="border-0 shadow-lg shadow-brand-maroon-100/20 dark:shadow-black/10 bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 text-white">
+          <Card className="border-0 shadow-lg shadow-brand-maroon-100/20 dark:shadow-black/10 bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 text-white hover:scale-[1.02] hover:shadow-xl hover:shadow-brand-maroon-800/30 transition-all duration-300 cursor-pointer">
             <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
@@ -158,7 +156,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* PUP ID */}
-          <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10">
+          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50">
             <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-brand-gold-50 dark:bg-brand-gold-950/30 flex items-center justify-center">
@@ -176,7 +174,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Account Status */}
-          <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10">
+          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50">
             <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
@@ -198,7 +196,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Find Parking CTA */}
             <Card 
-              className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
+              className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
               onClick={() => router.push('/parking')}
             >
               <CardContent className="p-6 !pt-6">
@@ -221,7 +219,7 @@ export default function DashboardPage() {
             </Card>
 
             {/* View Ticket */}
-            <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200">
+            <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 group cursor-pointer hover:scale-[1.01] transition-transform duration-200">
               <CardContent className="p-6 !pt-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-gold-500 to-brand-gold-700 flex items-center justify-center shrink-0 shadow-lg shadow-brand-gold-600/20 group-hover:shadow-xl transition-shadow">
@@ -243,7 +241,7 @@ export default function DashboardPage() {
             {/* Admin Management (Only for Admins) */}
             {profile?.is_admin && (
               <Card 
-                className="border-0 shadow-lg shadow-indigo-100/20 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
+                className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
                 onClick={() => router.push('/admin/lots')}
               >
                 <CardContent className="p-6 !pt-6">
@@ -270,8 +268,8 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">Recent Activity</h2>
-          <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10">
-            <CardContent className={recentTickets.length > 0 ? "p-0" : "p-8"}>
+          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50">
+            <CardContent className={recentTickets.length > 0 ? "p-0" : "p-12 sm:p-9.5"}>
               {recentTickets.length > 0 ? (
                 <div className="divide-y divide-gray-100 dark:divide-white/10">
                   {recentTickets.map(ticket => (

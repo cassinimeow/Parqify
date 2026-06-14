@@ -11,14 +11,26 @@ export async function GET() {
     
     const { data: lots, error } = await supabase
       .from('parking_lots')
-      .select('id, name, total_slots, created_at')
+      .select(`
+        id, 
+        name, 
+        created_at,
+        parking_slots(id)
+      `)
       .order('name');
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ lots });
+    // Dynamically calculate live slots to ensure 100% accuracy
+    const liveLots = lots.map(lot => {
+      const trueCount = lot.parking_slots ? lot.parking_slots.length : 0;
+      const { parking_slots, ...rest } = lot;
+      return { ...rest, total_slots: trueCount };
+    });
+
+    return NextResponse.json({ lots: liveLots });
   } catch (err) {
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -39,6 +51,10 @@ export async function POST(request) {
     
     if (!name || total_slots === undefined) {
       return NextResponse.json({ error: 'Name and total_slots are required' }, { status: 400 });
+    }
+
+    if (total_slots > 500) {
+      return NextResponse.json({ error: 'Cannot create more than 500 slots at once' }, { status: 400 });
     }
 
     const { data, error } = await supabase

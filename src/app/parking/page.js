@@ -18,9 +18,22 @@ export default function ParkingPage() {
   const [isLoadingLots, setIsLoadingLots] = useState(true);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
+
   const [error, setError] = useState('');
   const [successTicket, setSuccessTicket] = useState(null);
+  const [activeTicket, setActiveTicket] = useState(null);
+
+  // Refs for stale closures in intervals
+  const selectedSlotRef = useRef(null);
+  const isBookingRef = useRef(false);
+
+  useEffect(() => {
+    selectedSlotRef.current = selectedSlot;
+  }, [selectedSlot]);
+
+  useEffect(() => {
+    isBookingRef.current = isBooking;
+  }, [isBooking]);
 
   // For real-time updates polling
   const pollingRef = useRef(null);
@@ -37,6 +50,14 @@ export default function ParkingPage() {
         }
         setUser(data.user);
         setProfile(data.profile);
+
+        // Fetch user's active ticket
+        const ticketRes = await fetch('/api/user/tickets', { cache: 'no-store' });
+        const ticketData = await ticketRes.json();
+        if (ticketRes.ok && ticketData.tickets) {
+          const active = ticketData.tickets.find(t => t.status === 'ACTIVE');
+          setActiveTicket(active || null);
+        }
       } catch (err) {
         router.push('/login');
       } finally {
@@ -91,11 +112,12 @@ export default function ParkingPage() {
       setSlots(newSlots);
 
       // If the currently selected slot was booked or occupied in the background, clear selection
-      if (selectedSlot) {
-        const currentSelectedInNewData = newSlots.find(s => s.id === selectedSlot.id);
+      const currentSelected = selectedSlotRef.current;
+      if (currentSelected && !isBookingRef.current) {
+        const currentSelectedInNewData = newSlots.find(s => s.id === currentSelected.id);
         if (currentSelectedInNewData && currentSelectedInNewData.status !== 'AVAILABLE') {
           setSelectedSlot(null);
-          setError(`Slot ${selectedSlot.slot_name} is no longer available.`);
+          setError(`Slot ${currentSelected.slot_name} is no longer available.`);
         }
       }
     } catch (err) {
@@ -128,23 +150,7 @@ export default function ParkingPage() {
     };
   }, [selectedLot]);
 
-  // Seed DB utility
-  async function handleSeedDatabase() {
-    setIsSeeding(true);
-    setError('');
-    try {
-      const res = await fetch('/api/parking/seed', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to seed database');
-      }
-      await fetchLots(true);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsSeeding(false);
-    }
-  }
+
 
   // Book parking slot
   async function handleBookSlot() {
@@ -172,6 +178,7 @@ export default function ParkingPage() {
         entryTime: data.ticket.entry_time,
         pupId: profile?.pup_id || 'N/A'
       });
+      setActiveTicket(data.ticket);
       
       // Update slots display immediately
       await fetchSlots(selectedLot.id, true);
@@ -215,8 +222,8 @@ export default function ParkingPage() {
               </svg>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 flex items-center justify-center shadow-md">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 flex items-center justify-center shadow-md hidden sm:flex">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                 </svg>
@@ -277,28 +284,19 @@ export default function ParkingPage() {
             <p className="text-xs text-gray-500">Loading campus lots...</p>
           </div>
         ) : lots.length === 0 ? (
-          /* Empty DB State with Seed fallback */
+          /* Empty DB State */
           <Card className="border-0 shadow-lg text-center p-12 max-w-xl mx-auto space-y-6">
-            <div className="w-16 h-16 bg-brand-gold-50 dark:bg-brand-gold-950/20 rounded-2xl flex items-center justify-center mx-auto">
-              <svg className="w-8 h-8 text-brand-gold-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="w-16 h-16 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-center mx-auto border border-gray-100 dark:border-white/5">
+              <svg className="w-8 h-8 text-gray-400 dark:text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
               </svg>
             </div>
             <div className="space-y-2">
               <CardTitle className="text-2xl font-outfit">No Parking Lots Found</CardTitle>
               <CardDescription className="max-w-md mx-auto">
-                The database is currently empty. Would you like to seed default campus lots and parking slots to test the selection?
+                There are currently no parking lots available in the system. An administrator must add campus locations via the Admin Space Management console.
               </CardDescription>
             </div>
-            <Button 
-              variant="secondary" 
-              size="lg" 
-              onClick={handleSeedDatabase} 
-              isLoading={isSeeding}
-              className="mx-auto"
-            >
-              Seed Default Campus Lots
-            </Button>
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -316,26 +314,46 @@ export default function ParkingPage() {
                       onClick={() => setSelectedLot(lot)}
                       className={`cursor-pointer transition-all duration-300 border ${
                         isActive
-                          ? 'border-brand-maroon-800 bg-brand-maroon-50/10 shadow-md scale-[1.01] dark:border-brand-gold-500/80 dark:bg-brand-gold-500/5'
-                          : 'border-gray-100 hover:border-gray-300 dark:border-white/10 dark:hover:border-zinc-800'
+                          ? 'border-brand-maroon-800 bg-brand-maroon-50/30 shadow-md scale-[1.02] dark:border-brand-gold-500/80 dark:bg-brand-gold-500/10 ring-2 ring-brand-maroon-800/20 dark:ring-brand-gold-500/20'
+                          : 'border-gray-200 hover:border-gray-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/80'
                       }`}
                     >
-                      <CardContent className="p-5 flex flex-col justify-between h-28">
-                        <div>
-                          <span className={`text-[10px] uppercase font-bold tracking-wider ${
-                            isActive ? 'text-brand-maroon-800 dark:text-brand-gold-400' : 'text-gray-400'
-                          }`}>
-                            Campus Location
-                          </span>
-                          <h4 className="font-bold font-outfit text-sm text-gray-900 dark:text-white mt-1 line-clamp-1">
-                            {lot.name}
-                          </h4>
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-gray-500 dark:text-zinc-400 font-sans mt-2">
-                          <span>Total Slots: {lot.total_slots}</span>
+                      <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full min-h-[110px]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className={`text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 ${
+                              isActive ? 'text-brand-maroon-800 dark:text-brand-gold-400' : 'text-gray-400 dark:text-gray-500'
+                            }`}>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                              </svg>
+                              Campus Lot
+                            </span>
+                            <h4 className={`font-bold font-outfit text-base mt-1.5 line-clamp-1 ${
+                              isActive ? 'text-brand-maroon-950 dark:text-brand-gold-100' : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {lot.name}
+                            </h4>
+                          </div>
+                          
+                          {/* Active Ping Indicator */}
                           {isActive && (
-                            <span className="w-2 h-2 rounded-full bg-brand-maroon-800 dark:bg-brand-gold-500 animate-pulse" />
+                            <span className="relative flex h-3 w-3 shrink-0 mt-1 mr-1">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-maroon-400 dark:bg-brand-gold-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-maroon-800 dark:bg-brand-gold-500"></span>
+                            </span>
                           )}
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-4">
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest ${
+                            isActive 
+                              ? 'bg-brand-maroon-800 text-white dark:bg-brand-gold-500 dark:text-brand-gold-950 shadow-sm'
+                              : 'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+                          }`}>
+                            {lot.total_slots} {lot.total_slots === 1 ? 'SLOT' : 'SLOTS'}
+                          </span>
                         </div>
                       </CardContent>
                     </Card>
@@ -560,15 +578,23 @@ export default function ParkingPage() {
                   </div>
 
                   {/* Submit Button */}
-                  <Button
-                    onClick={handleBookSlot}
-                    disabled={!selectedSlot || isBooking}
-                    isLoading={isBooking}
-                    variant="primary"
-                    className="w-full py-3"
-                  >
-                    Confirm & Reserve Slot
-                  </Button>
+                  {activeTicket ? (
+                    <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 text-sm text-center">
+                      <p className="font-bold">Active Reservation Found</p>
+                      <p className="mt-1">You cannot reserve multiple slots at once. Please complete your current session first.</p>
+                      <Button variant="outline" className="mt-4 w-full border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30" onClick={() => router.push('/dashboard')}>View Ticket</Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleBookSlot}
+                      disabled={!selectedSlot || isBooking}
+                      isLoading={isBooking}
+                      variant="primary"
+                      className="w-full py-3"
+                    >
+                      Confirm & Reserve Slot
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>

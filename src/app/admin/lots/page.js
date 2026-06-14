@@ -100,12 +100,19 @@ export default function AdminLotsPage() {
   async function handleAddLot(e) {
     e.preventDefault();
     if (!newLotName || !newLotTotal) return;
+    
+    const slotsCount = parseInt(newLotTotal, 10);
+    if (slotsCount > 30) {
+      setError('Cannot create more than 30 slots per lot.');
+      return;
+    }
+
     setIsAddingLot(true);
     try {
       const res = await fetch('/api/parking/lots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newLotName, total_slots: parseInt(newLotTotal, 10) })
+        body: JSON.stringify({ name: newLotName, total_slots: slotsCount })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -156,6 +163,7 @@ export default function AdminLotsPage() {
       
       setNewSlotName('');
       fetchSlots(selectedLot.id);
+      fetchLots();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -177,6 +185,7 @@ export default function AdminLotsPage() {
         throw new Error(data.error);
       }
       fetchSlots(selectedLot.id);
+      fetchLots();
     } catch (err) {
       setError(err.message);
     }
@@ -207,7 +216,14 @@ export default function AdminLotsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 className="text-xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white">Admin / Space Management</h1>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-maroon-800 to-brand-maroon-900 flex items-center justify-center shadow-md hidden sm:flex">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                </svg>
+              </div>
+              <h1 className="text-xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white">Admin / Space Management</h1>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
@@ -229,8 +245,17 @@ export default function AdminLotsPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 mt-8 space-y-8">
         
         {error && (
-          <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-200">
-            {error}
+          <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center justify-between shadow-sm">
+            <span className="font-medium text-sm">{error}</span>
+            <button 
+              onClick={() => setError('')} 
+              className="p-1 rounded-md hover:bg-red-100 transition-colors"
+              aria-label="Dismiss error"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 
@@ -254,12 +279,15 @@ export default function AdminLotsPage() {
                     required 
                   />
                   <Input 
-                    type="number" 
-                    placeholder="Total Slots (e.g. 10)" 
+                    type="text" 
+                    inputMode="numeric"
+                    placeholder="Total Slots (max 30)" 
                     value={newLotTotal} 
-                    onChange={e => setNewLotTotal(e.target.value)} 
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setNewLotTotal(val);
+                    }}
                     required 
-                    min="1"
                   />
                 </div>
                 <Button type="submit" isLoading={isAddingLot} className="w-full">Create Lot</Button>
