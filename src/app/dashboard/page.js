@@ -181,7 +181,10 @@ export default function DashboardPage() {
           <h2 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Find Parking CTA */}
-            <Card className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200">
+            <Card 
+              className="border-0 shadow-lg shadow-gray-100/50 dark:shadow-black/10 group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
+              onClick={() => router.push('/parking')}
+            >
               <CardContent className="p-6 !pt-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-maroon-800 to-brand-gold-600 flex items-center justify-center shrink-0 shadow-lg shadow-brand-maroon-800/20 group-hover:shadow-xl transition-shadow">
