@@ -64,11 +64,18 @@ export default function ChatbotWidget() {
       const lowerText = text.toLowerCase();
       let foundAnswer = null;
 
-      // Simple keyword matching
-      for (const item of QA_DATABASE) {
-        if (item.keywords.some((kw) => lowerText.includes(kw))) {
-          foundAnswer = item.answer;
-          break;
+      // Check for exact question match first
+      const exactMatch = QA_DATABASE.find(item => item.question.toLowerCase() === lowerText);
+      
+      if (exactMatch) {
+        foundAnswer = exactMatch.answer;
+      } else {
+        // Simple keyword matching
+        for (const item of QA_DATABASE) {
+          if (item.keywords.some((kw) => lowerText.includes(kw))) {
+            foundAnswer = item.answer;
+            break;
+          }
         }
       }
 
