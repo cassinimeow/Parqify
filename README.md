@@ -1,6 +1,6 @@
-# Parqify - PUP Manila Community Parking Management System
+# Parqify - PUP ITECH Community Parking Management System
 
-Parqify is a modern, real-time web application built for the PUP Manila community to intelligently manage parking resources, reservations, and digital ticketing.
+Parqify is a modern, real-time web application built for the PUP ITECH community to intelligently manage parking resources, reservations, and digital ticketing.
 
 ![Parqify Cover](/public/parqify.png)
 
@@ -25,7 +25,7 @@ Parqify is a modern, real-time web application built for the PUP Manila communit
 - **Digital Ticketing:** Automatically generated QR code tickets for entry and checkout.
 - **Dashboard & Analytics:** Personal dashboards for users, integrated with Vercel Analytics for usage metrics.
 - **Parqibot Assistant:** A floating interactive Chatbot to help users with common questions.
-- **Premium Design System:** Uses PUP Manila's official Maroon and Gold branding with smooth micro-animations.
+- **Premium Design System:** Uses PUP ITECH's official Maroon and Gold branding with smooth micro-animations.
 
 ## 🛠️ Technology Stack
 

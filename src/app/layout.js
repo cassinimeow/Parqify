@@ -1,6 +1,7 @@
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ChatbotWidget from "@/components/ui/ChatbotWidget";
+import Footer from "@/components/ui/Footer";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
@@ -17,8 +18,8 @@ const outfitFont = Outfit({
 });
 
 export const metadata = {
-  title: "Parqify - PUP Manila Community Parking",
-  description: "Real-time smart parking selection and reservation system for PUP Manila.",
+  title: "Parqify - PUP ITECH Community Parking",
+  description: "Real-time smart parking selection and reservation system for PUP ITECH.",
 };
 
 export default function RootLayout({ children }) {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
           {children}
           <ChatbotWidget />
           <Analytics />
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
