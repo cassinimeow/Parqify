@@ -1,6 +1,7 @@
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ChatbotWidget from "@/components/ui/ChatbotWidget";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const sansFont = Plus_Jakarta_Sans({
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           <ChatbotWidget />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
