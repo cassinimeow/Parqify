@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/auth';
  */
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, nonce } = await request.json();
 
     const { user, error: authError } = await getCurrentUser();
     
@@ -22,6 +22,7 @@ export async function POST(request) {
     const updates = {};
     if (email) updates.email = email;
     if (password) updates.password = password;
+    if (nonce) updates.nonce = nonce;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ message: 'No changes provided' });

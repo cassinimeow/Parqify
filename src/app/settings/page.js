@@ -37,6 +37,9 @@ export default function SettingsPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   // UI States
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -130,6 +133,12 @@ export default function SettingsPage() {
     setSecurityMessage({ type: '', text: '' });
 
     try {
+      if (password && password !== confirmPassword) {
+        setSecurityMessage({ type: 'error', text: 'New passwords do not match.' });
+        setIsSavingSecurity(false);
+        return;
+      }
+
       const updates = {};
       if (email !== user.email) updates.email = email;
       if (password) updates.password = password;
@@ -138,6 +147,22 @@ export default function SettingsPage() {
         setSecurityMessage({ type: 'error', text: 'No changes made.' });
         setIsSavingSecurity(false);
         return;
+      }
+
+      // If we are changing password and haven't sent the OTP yet, send it now.
+      if (password && !showOtpInput) {
+        const reauthRes = await fetch('/api/auth/reauthenticate', { method: 'POST' });
+        const reauthData = await reauthRes.json();
+        if (!reauthRes.ok) throw new Error(reauthData.error || 'Failed to send OTP.');
+        
+        setShowOtpInput(true);
+        setSecurityMessage({ type: 'success', text: 'A 6-digit verification code has been sent to your email. Please enter it below to confirm.' });
+        setIsSavingSecurity(false);
+        return;
+      }
+
+      if (showOtpInput) {
+        updates.nonce = otpCode;
       }
 
       const res = await fetch('/api/user/security', {
@@ -152,6 +177,9 @@ export default function SettingsPage() {
 
       setSecurityMessage({ type: 'success', text: data.message });
       setPassword(''); // Clear password field
+      setConfirmPassword(''); // Clear confirm password field
+      setShowOtpInput(false);
+      setOtpCode('');
     } catch (err) {
       setSecurityMessage({ type: 'error', text: err.message || 'Failed to update security settings.' });
     } finally {
@@ -309,6 +337,37 @@ export default function SettingsPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 helperText="Must be at least 6 characters."
               />
+              {password && (
+                <Input
+                  id="confirm_password"
+                  type="password"
+                  label="Confirm New Password"
+                  placeholder="Re-type your new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required={!!password}
+                />
+              )}
+
+              {showOtpInput && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Input
+                    id="otpCode"
+                    type="text"
+                    label="Verification Code (OTP)"
+                    placeholder="Enter 6-digit code"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    maxLength={6}
+                    required
+                    icon={
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                      </svg>
+                    }
+                  />
+                </div>
+              )}
 
               {securityMessage.text && (
                 <div className={`p-3 rounded-lg text-sm ${securityMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
@@ -317,7 +376,7 @@ export default function SettingsPage() {
               )}
 
               <Button type="submit" variant="outline" isLoading={isSavingSecurity} disabled={!(user && (email !== (user.email || '') || password !== ''))}>
-                Update Security Settings
+                {showOtpInput ? 'Verify and Save' : 'Update Security Settings'}
               </Button>
             </form>
           </CardContent>
