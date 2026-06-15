@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Parqify - PUP Manila Community Parking Management System
 
-## Getting Started
+Parqify is a modern, real-time web application built for the PUP Manila community to intelligently manage parking resources, reservations, and digital ticketing.
 
-First, run the development server:
+![Parqify Cover](/public/parqify.png)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📸 System Screenshots
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+|                 User Dashboard                  |                Interactive Parking Lot                 |
+| :---------------------------------------------: | :----------------------------------------------------: |
+| ![Dashboard](/public/screenshots/dashboard.png) | ![Parking Lot](/public/screenshots/parkinglotpage.png) |
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+|                 Digital Ticket Confirmation                 |              Active Ticket Page               |
+| :---------------------------------------------------------: | :-------------------------------------------: |
+| ![Confirmation](/public/screenshots/ticketconfrimation.png) | ![Ticket](/public/screenshots/ticketpage.png) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+|                     Admin Console                      |
+| :----------------------------------------------------: |
+| ![Admin Console](/public/screenshots/adminconsole.png) |
 
-## Learn More
+## ✨ Features
 
-To learn more about Next.js, take a look at the following resources:
+- **Secure Authentication:** JWT and cookie-based Auth using Next.js SSR and Supabase.
+- **Interactive Parking Selection:** A beautiful visual grid map of the campus parking lot showing real-time slot availability.
+- **Digital Ticketing:** Automatically generated QR code tickets for entry and checkout.
+- **Dashboard & Analytics:** Personal dashboards for users, integrated with Vercel Analytics for usage metrics.
+- **Parqibot Assistant:** A floating interactive Chatbot to help users with common questions.
+- **Premium Design System:** Uses PUP Manila's official Maroon and Gold branding with smooth micro-animations.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Technology Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Framework:** [Next.js 14 App Router](https://nextjs.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Database & Auth:** [Supabase](https://supabase.com/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Analytics:** [Vercel Analytics](https://vercel.com/analytics)
+- **Deployment:** Vercel
 
-## Deploy on Vercel
+## 💻 Local Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up your `.env.local` file with Supabase credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 👥 The Team
+
+- **Christian Abelarde** - Frontend Developer (Auth & Dashboard) • [GitHub](https://github.com/Imajoker22)
+- **Elizander Aguila** - Project Manager / Lead Backend Developer • [GitHub](https://github.com/cassinimeow)
+- **Marc Kelwin Bulic** - QA & Hardware/Accessibility Integration • [GitHub](https://github.com/marckelwinbulic-beep)
+- **Johann Mcwee Dinaya** - Frontend Developer (Interactive Selection UI) • [GitHub](https://github.com/yohannmcdi)
+- **Edrian Juampit** - Frontend Developer (Digital Ticket System) • [GitHub](https://github.com/delriooo)
+- **Xyra Mayo** - UI/UX Designer & QA • [GitHub](https://github.com/xjamayo)

@@ -12,12 +12,17 @@ const QA_DATABASE = [
   {
     keywords: ['cancel', 'delete', 'remove'],
     question: 'How do I cancel my booking?',
-    answer: 'Currently, you can complete your booking by viewing your Digital Ticket and clicking "Complete Parking". If you need to cancel an active reservation before entering, please contact the admin.'
+    answer: 'If you need to cancel an active reservation, please look for a Super Admin so they can manually override and cancel your ticket from the system.'
   },
   {
-    keywords: ['password', 'reset', 'forgot'],
-    question: 'How do I reset my password?',
+    keywords: ['password', 'reset', 'forgot', 'change'],
+    question: 'How do I change my password?',
     answer: 'If you are logged out, click "Forgot Password" on the Login page. If you are logged in, go to your Settings page from the top-right dropdown menu to update your password securely.'
+  },
+  {
+    keywords: ['email', 'address'],
+    question: 'How do I change my email?',
+    answer: 'To change your email address, go to your Account Settings. When you update it, we will send a confirmation link to your new email address to verify the change. Note that your PUP ID cannot be changed.'
   },
   {
     keywords: ['pay', 'cost', 'fee', 'rate'],
