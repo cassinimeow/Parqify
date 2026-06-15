@@ -54,7 +54,7 @@ export async function POST(request) {
       .from('tickets')
       .select('id')
       .eq('user_id', profile.id)
-      .eq('status', 'ACTIVE')
+      .in('status', ['RESERVED', 'ACTIVE'])
       .maybeSingle();
 
     if (activeTicket) {
@@ -80,7 +80,7 @@ export async function POST(request) {
       .insert({
         user_id: profile.id,
         slot_id: slot_id,
-        status: 'ACTIVE',
+        status: 'RESERVED',
       })
       .select()
       .single();

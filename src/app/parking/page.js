@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function ParkingPage() {
   const router = useRouter();
@@ -67,7 +68,7 @@ export default function ParkingPage() {
 
         if (ticketRes.ok) {
           const ticketData = await ticketRes.json();
-          const active = ticketData.tickets?.find(t => t.status === 'ACTIVE');
+          const active = ticketData.tickets?.find(t => t.status === 'ACTIVE' || t.status === 'RESERVED');
           setActiveTicket(active || null);
         }
       } catch (err) {
@@ -205,9 +206,14 @@ export default function ParkingPage() {
   if (isLoadingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-3 border-brand-maroon-800 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-sans">Loading campus parking zones...</p>
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
+            <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
+          </div>
+          <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
+            Loading Parking Zones...
+          </p>
         </div>
       </div>
     );
@@ -449,9 +455,9 @@ export default function ParkingPage() {
                                 onClick={() => setSelectedSlot(slot)}
                                 className={`w-full py-4 px-3 rounded-xl border flex items-center justify-between text-left transition-all duration-200 active:scale-[0.98] ${
                                   isSelected
-                                    ? 'bg-brand-gold-500/10 border-brand-gold-600 ring-2 ring-brand-gold-500/40 text-brand-gold-950 dark:text-brand-gold-400 shadow-md font-bold'
+                                    ? 'bg-brand-gold-500/10 border-brand-gold-600 ring-2 ring-brand-gold-500/40 text-brand-gold-950 dark:text-brand-gold-400 shadow-md font-bold hover:scale-[1.02]'
                                     : isAvailable
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-500 cursor-pointer shadow-sm'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-500 cursor-pointer shadow-sm hover:scale-[1.02]'
                                     : isOccupied
                                     ? 'bg-red-500/5 border-red-500/20 text-red-400 dark:text-red-900/60 cursor-not-allowed select-none'
                                     : 'bg-amber-500/5 border-amber-500/20 text-amber-500 dark:text-amber-800/60 cursor-not-allowed select-none'
@@ -495,9 +501,9 @@ export default function ParkingPage() {
                                 onClick={() => setSelectedSlot(slot)}
                                 className={`w-full py-4 px-3 rounded-xl border flex items-center justify-between text-left transition-all duration-200 active:scale-[0.98] ${
                                   isSelected
-                                    ? 'bg-brand-gold-500/10 border-brand-gold-600 ring-2 ring-brand-gold-500/40 text-brand-gold-950 dark:text-brand-gold-400 shadow-md font-bold'
+                                    ? 'bg-brand-gold-500/10 border-brand-gold-600 ring-2 ring-brand-gold-500/40 text-brand-gold-950 dark:text-brand-gold-400 shadow-md font-bold hover:scale-[1.02]'
                                     : isAvailable
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-500 cursor-pointer shadow-sm'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-500 cursor-pointer shadow-sm hover:scale-[1.02]'
                                     : isOccupied
                                     ? 'bg-red-500/5 border-red-500/20 text-red-400 dark:text-red-900/60 cursor-not-allowed select-none'
                                     : 'bg-amber-500/5 border-amber-500/20 text-amber-500 dark:text-amber-800/60 cursor-not-allowed select-none'
@@ -594,7 +600,7 @@ export default function ParkingPage() {
                     <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 text-sm text-center">
                       <p className="font-bold">Active Reservation Found</p>
                       <p className="mt-1">You cannot reserve multiple slots at once. Please complete your current session first.</p>
-                      <Button variant="outline" className="mt-4 w-full border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30" onClick={() => router.push('/dashboard')}>View Ticket</Button>
+                      <Button variant="outline" className="mt-4 w-full border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30" onClick={() => router.push('/ticket')}>View Ticket</Button>
                     </div>
                   ) : (
                     <Button
@@ -636,26 +642,22 @@ export default function ParkingPage() {
               </p>
             </div>
 
-            {/* Virtual QR Code Component */}
-            <div className="relative mx-auto w-40 h-40 bg-white p-3 rounded-xl shadow-md border border-neutral-100 flex items-center justify-center">
-              
-              {/* Grid pattern generating unique mock QR code layout */}
-              <div className="grid grid-cols-6 gap-1.5 w-full h-full opacity-80">
-                {Array.from({ length: 36 }).map((_, i) => {
-                  const isFill = (i * 7 + 13) % 3 === 0 || i === 0 || i === 5 || i === 30 || i === 35;
-                  return (
-                    <div
-                      key={i}
-                      className={`rounded-sm ${isFill ? 'bg-zinc-900' : 'bg-transparent'}`}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Center badge */}
-              <div className="absolute inset-0 m-auto w-9 h-9 bg-brand-maroon-800 border-2 border-white rounded-lg flex items-center justify-center text-white text-[9px] font-bold font-outfit shadow-sm">
-                PUP
-              </div>
+            {/* QR Code Component */}
+            <div className="relative mx-auto w-40 h-40 bg-white p-3 rounded-xl shadow-md border border-neutral-100 flex flex-col items-center justify-center">
+              <QRCodeSVG 
+                value={successTicket.id} 
+                size={130} 
+                level="H"
+                fgColor="#800000"
+                imageSettings={{
+                  src: "/parqify.ico",
+                  x: undefined,
+                  y: undefined,
+                  height: 20,
+                  width: 20,
+                  excavate: true,
+                }}
+              />
             </div>
 
             {/* Ticket receipt info */}

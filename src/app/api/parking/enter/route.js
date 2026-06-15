@@ -18,7 +18,7 @@ export async function POST(request) {
 
     const supabase = await getSupabase();
 
-    // Verify ticket belongs to user and is ACTIVE
+    // Verify ticket belongs to user and is RESERVED
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .select('id, slot_id, status')
@@ -30,17 +30,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
     }
 
-    if (ticket.status !== 'ACTIVE' && ticket.status !== 'RESERVED') {
-      return NextResponse.json({ error: 'Ticket is already completed or invalid' }, { status: 400 });
+    if (ticket.status !== 'RESERVED') {
+      return NextResponse.json({ error: 'Ticket is already active or completed' }, { status: 400 });
     }
 
-    // Begin checkout process
-    // 1. Update ticket status to COMPLETED and set exit_time
+    // 1. Update ticket status to ACTIVE
     const { error: updateTicketError } = await supabase
       .from('tickets')
       .update({ 
-        status: 'COMPLETED',
-        exit_time: new Date().toISOString()
+        status: 'ACTIVE'
       })
       .eq('id', ticket_id);
 
@@ -48,17 +46,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to update ticket' }, { status: 500 });
     }
 
-    // 2. Free up the parking slot
+    // 2. Update the parking slot to OCCUPIED
     const { error: updateSlotError } = await supabase
       .from('parking_slots')
-      .update({ status: 'AVAILABLE' })
+      .update({ status: 'OCCUPIED' })
       .eq('id', ticket.slot_id);
 
     if (updateSlotError) {
-      console.error('Failed to free slot:', ticket.slot_id);
+      console.error('Failed to update slot:', ticket.slot_id);
     }
 
-    return NextResponse.json({ message: 'Checkout successful', success: true });
+    return NextResponse.json({ message: 'Gate scan successful', success: true });
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

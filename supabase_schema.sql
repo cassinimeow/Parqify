@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     rfid_tag TEXT UNIQUE, -- Unique RFID chip ID
     avatar_url TEXT, -- URL for the user's uploaded profile picture
     is_admin BOOLEAN DEFAULT false, -- True if the user is an administrator
+    is_super_admin BOOLEAN DEFAULT false, -- True if the user is a super administrator
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

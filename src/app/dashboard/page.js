@@ -12,6 +12,12 @@ export default function DashboardPage() {
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [expandedTicketId, setExpandedTicketId] = useState(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+
+  const toggleTicket = (id) => {
+    setExpandedTicketId(expandedTicketId === id ? null : id);
+  };
 
   useEffect(() => {
     async function fetchUserAndTickets() {
@@ -57,9 +63,14 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-3 border-brand-maroon-800 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-sans">Preparing your parking dashboard...</p>
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
+            <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
+          </div>
+          <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
+            Loading Dashboard...
+          </p>
         </div>
       </div>
     );
@@ -68,8 +79,8 @@ export default function DashboardPage() {
   const displayName = profile?.full_name || user?.email || 'User';
   const greeting = getGreeting();
   
-  const activeTicket = tickets.find(t => t.status === 'ACTIVE');
-  const recentTickets = tickets.filter(t => t.status !== 'ACTIVE').slice(0, 5);
+  const activeTicket = tickets.find(t => t.status === 'ACTIVE' || t.status === 'RESERVED');
+  const recentTickets = tickets;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-maroon-50/50 via-white to-brand-gold-50/50 dark:from-brand-maroon-950 dark:via-[#09090b] dark:to-brand-gold-950 relative overflow-hidden">
@@ -145,7 +156,24 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
                   </svg>
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Active Ticket</span>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-2">
+                    {activeTicket?.status === 'ACTIVE' && (
+                      <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                    )}
+                    {activeTicket?.status === 'RESERVED' && (
+                      <span className="w-3 h-3 rounded-full bg-brand-gold-500 shrink-0"></span>
+                    )}
+                    <span className="text-xs font-semibold uppercase tracking-wider opacity-70">
+                      {activeTicket ? activeTicket.status : 'NO TICKET'}
+                    </span>
+                  </div>
+                  {activeTicket && (
+                    <span className="text-[10px] font-mono opacity-50 mt-1 tracking-widest uppercase">
+                      ID: {activeTicket.id.substring(0, 8)}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-2xl font-bold font-outfit">
                 {activeTicket ? activeTicket.parking_slots?.slot_name : 'None'}
@@ -157,7 +185,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* PUP ID */}
-          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50">
+          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 cursor-default">
             <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-brand-gold-50 dark:bg-brand-gold-950/30 flex items-center justify-center">
@@ -175,7 +203,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Account Status */}
-          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50">
+          <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 cursor-default">
             <CardContent className="p-6 !pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
@@ -220,7 +248,10 @@ export default function DashboardPage() {
             </Card>
 
             {/* View Ticket */}
-            <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 group cursor-pointer hover:scale-[1.01] transition-transform duration-200">
+            <Card 
+              className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50 group cursor-pointer hover:scale-[1.01] transition-transform duration-200"
+              onClick={() => router.push('/ticket')}
+            >
               <CardContent className="p-6 !pt-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-gold-500 to-brand-gold-700 flex items-center justify-center shrink-0 shadow-lg shadow-brand-gold-600/20 group-hover:shadow-xl transition-shadow">
@@ -268,32 +299,92 @@ export default function DashboardPage() {
 
         {/* Recent Activity */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">Recent Activity</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">Recent Activity</h2>
+            {tickets.length > 2 && (
+              <button 
+                onClick={() => setShowAllHistory(true)}
+                className="p-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-600 dark:text-zinc-400 transition-colors"
+                title="Complete History"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </button>
+            )}
+          </div>
           <Card className="border border-gray-200/60 dark:border-white/10 shadow-xl shadow-gray-200/60 dark:shadow-black/30 bg-white dark:bg-zinc-900/50">
-            <CardContent className={recentTickets.length > 0 ? "p-0" : "p-12 sm:p-9.5"}>
+            <CardContent className={recentTickets.length > 0 ? "!p-0" : "p-12 sm:p-9.5"}>
               {recentTickets.length > 0 ? (
-                <div className="divide-y divide-gray-100 dark:divide-white/10">
+                <div className="flex flex-col p-2 max-h-[220px] overflow-y-auto custom-scrollbar">
                   {recentTickets.map(ticket => (
-                    <div key={ticket.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-brand-maroon-50 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                          <svg className="w-5 h-5 text-brand-maroon-800 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
+                    <div key={ticket.id} className="border-b border-gray-100 dark:border-white/10 last:border-0 flex flex-col rounded-xl overflow-hidden transition-all shrink-0">
+                      <div 
+                        onClick={() => toggleTicket(ticket.id)}
+                        className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                            ticket.status === 'ACTIVE' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                            ticket.status === 'RESERVED' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+                          }`}>
+                            {ticket.status === 'ACTIVE' ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                              </svg>
+                            ) : ticket.status === 'RESERVED' ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 dark:text-white font-outfit">
+                              {ticket.parking_slots?.parking_lots?.name || 'Unknown Lot'} • {ticket.parking_slots?.slot_name || 'N/A'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                              {new Date(ticket.entry_time || ticket.created_at).toLocaleDateString()} at {new Date(ticket.entry_time || ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-gray-900 dark:text-white font-outfit">
-                            {ticket.parking_slots?.parking_lots?.name || 'Unknown Lot'} • {ticket.parking_slots?.slot_name || 'N/A'}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                            {new Date(ticket.entry_time).toLocaleDateString()} at {new Date(ticket.entry_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <span className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                            ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
+                          }`}>
+                            {ticket.status}
+                          </span>
+                          <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
+                            <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="inline-block px-2.5 py-1 rounded-md bg-gray-100 dark:bg-zinc-800 text-[10px] font-bold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">
-                          Completed
-                        </span>
+                      
+                      {/* Expanded Details */}
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedTicketId === ticket.id ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
+                        <div className="px-6 pb-2 pt-2">
+                          <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-2 gap-4 border border-gray-100 dark:border-zinc-800">
+                            <div>
+                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Ticket ID</p>
+                              <p className="text-[10px] sm:text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{ticket.id}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Exit Time</p>
+                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                {ticket.exit_time ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Not yet exited'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -325,6 +416,93 @@ export default function DashboardPage() {
           </p>
         </div>
       </footer>
+
+      {/* All History Modal */}
+      {showAllHistory && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setShowAllHistory(false)} />
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800 shrink-0">
+              <h2 className="text-xl font-bold font-outfit text-gray-900 dark:text-white">Complete Parking History</h2>
+              <button 
+                onClick={() => setShowAllHistory(false)}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar max-h-[500px]">
+              {tickets.map(ticket => (
+                <div key={ticket.id} className="border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 rounded-xl overflow-hidden flex flex-col transition-all shrink-0 shadow-sm hover:shadow-md">
+                  <div 
+                    onClick={() => toggleTicket(ticket.id)}
+                    className="p-4 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                        ticket.status === 'ACTIVE' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                        ticket.status === 'RESERVED' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
+                      }`}>
+                        {ticket.status === 'ACTIVE' ? (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                        ) : ticket.status === 'RESERVED' ? (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white font-outfit">
+                          {ticket.parking_slots?.parking_lots?.name || 'Unknown Lot'} • {ticket.parking_slots?.slot_name || 'N/A'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                          {new Date(ticket.entry_time || ticket.created_at).toLocaleDateString()} at {new Date(ticket.entry_time || ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block ${
+                        ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
+                      }`}>
+                        {ticket.status}
+                      </span>
+                      <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Expanded Details */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedTicketId === ticket.id ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
+                    <div className="px-4 pb-0 pt-2">
+                      <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-2 gap-4 border border-gray-100 dark:border-zinc-800">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Ticket ID</p>
+                          <p className="text-[10px] sm:text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{ticket.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Exit Time</p>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            {ticket.exit_time ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Not yet exited'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

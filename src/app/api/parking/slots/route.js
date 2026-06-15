@@ -71,3 +71,56 @@ export async function DELETE(request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+/**
+ * PUT /api/parking/slots
+ * Updates a parking slot's status.
+ */
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { id, status } = body;
+    if (!id || !status) return NextResponse.json({ error: 'Slot ID and new status are required' }, { status: 400 });
+
+    const supabase = await getSupabase();
+    
+    const { data, error } = await supabase
+      .from('parking_slots')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // If the slot is being overridden to AVAILABLE, automatically complete any active/reserved tickets
+    // so the user's ticket page is cleared and accurate.
+    if (status === 'AVAILABLE') {
+      await supabase
+        .from('tickets')
+        .update({ status: 'COMPLETED', exit_time: new Date().toISOString() })
+        .eq('slot_id', id)
+        .in('status', ['ACTIVE', 'RESERVED']);
+    } else if (status === 'OCCUPIED') {
+      // If the admin forcefully occupies a slot, any RESERVED ticket on it should become ACTIVE
+      await supabase
+        .from('tickets')
+        .update({ status: 'ACTIVE' })
+        .eq('slot_id', id)
+        .eq('status', 'RESERVED');
+    } else if (status === 'RESERVED') {
+      // If the admin forcefully reverts a slot to RESERVED, any ACTIVE ticket on it should become RESERVED
+      await supabase
+        .from('tickets')
+        .update({ status: 'RESERVED' })
+        .eq('slot_id', id)
+        .eq('status', 'ACTIVE');
+    }
+
+    return NextResponse.json({ slot: data });
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

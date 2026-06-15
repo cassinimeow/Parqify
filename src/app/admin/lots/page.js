@@ -171,6 +171,24 @@ export default function AdminLotsPage() {
     }
   }
 
+  // Update Slot Status
+  async function handleUpdateSlotStatus(id, newStatus) {
+    try {
+      const res = await fetch('/api/parking/slots', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      fetchSlots(selectedLot.id);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   // Delete Slot
   async function handleDeleteSlot(id) {
     if (!confirm('Are you sure you want to delete this slot?')) return;
@@ -193,10 +211,15 @@ export default function AdminLotsPage() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-3 border-brand-maroon-800 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-sans">Loading Admin Space Management...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
+            <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
+          </div>
+          <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
+            Loading Admin Dashboard...
+          </p>
         </div>
       </div>
     );
@@ -309,15 +332,17 @@ export default function AdminLotsPage() {
                         <h4 className="font-bold font-outfit text-gray-900 dark:text-white">{lot.name}</h4>
                         <p className="text-xs text-gray-500">{lot.total_slots} Slots capacity</p>
                       </div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteLot(lot.id); }}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
-                        title="Delete Lot"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                        </svg>
-                      </button>
+                      {profile?.is_super_admin && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteLot(lot.id); }}
+                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                          title="Delete Lot"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
@@ -347,15 +372,17 @@ export default function AdminLotsPage() {
                         required 
                         className="flex-1"
                       />
-                      <select 
-                        value={newSlotStatus}
-                        onChange={e => setNewSlotStatus(e.target.value)}
-                        className="w-32 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-maroon-800 dark:focus:ring-brand-gold-500"
-                      >
-                        <option value="AVAILABLE">Available</option>
-                        <option value="OCCUPIED">Occupied</option>
-                        <option value="RESERVED">Reserved</option>
-                      </select>
+                      {profile?.is_super_admin && (
+                        <select 
+                          value={newSlotStatus}
+                          onChange={e => setNewSlotStatus(e.target.value)}
+                          className="w-32 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-maroon-800 dark:focus:ring-brand-gold-500"
+                        >
+                          <option value="AVAILABLE">Available</option>
+                          <option value="OCCUPIED">Occupied</option>
+                          <option value="RESERVED">Reserved</option>
+                        </select>
+                      )}
                     </div>
                     <Button type="submit" isLoading={isAddingSlot} variant="outline" className="w-full">Create Slot</Button>
                   </form>
@@ -372,15 +399,31 @@ export default function AdminLotsPage() {
                             <span className={`w-3 h-3 rounded-full ${slot.status === 'AVAILABLE' ? 'bg-emerald-500' : slot.status === 'OCCUPIED' ? 'bg-red-500' : 'bg-amber-500'}`} />
                             <span className="font-bold font-outfit text-gray-900 dark:text-white">{slot.slot_name}</span>
                           </div>
-                          <button 
-                            onClick={() => handleDeleteSlot(slot.id)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"
-                            title="Delete Slot"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                            </svg>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {profile?.is_super_admin ? (
+                              <select
+                                value={slot.status}
+                                onChange={(e) => handleUpdateSlotStatus(slot.id, e.target.value)}
+                                className="text-xs px-2 py-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-900 focus:outline-none"
+                              >
+                                <option value="AVAILABLE">AVAILABLE</option>
+                                <option value="OCCUPIED">OCCUPIED</option>
+                                <option value="RESERVED">RESERVED</option>
+                              </select>
+                            ) : (
+                              <span className="text-xs font-semibold text-gray-500">{slot.status}</span>
+                            )}
+                            
+                            <button 
+                              onClick={() => handleDeleteSlot(slot.id)}
+                              className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"
+                              title="Delete Slot"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
