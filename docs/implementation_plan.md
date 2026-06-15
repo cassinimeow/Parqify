@@ -43,13 +43,13 @@ Based on the team composition, here is the proposed task distribution:
 Here is the chronological sequence of tasks to build the system from start to finish:
 
 ### Phase 1: Foundation & Setup
-- [ ] **Task 1.1: Project Initialization** (Elizander)
+- [x] **Task 1.1: Project Initialization** (Elizander)
   - Initialize Next.js project.
   - Setup TailwindCSS/CSS Modules and base design tokens (colors, fonts).
-- [ ] **Task 1.2: Database Setup** (Elizander)
+- [x] **Task 1.2: Database Setup** (Elizander)
   - Configure the database (e.g., Supabase/Firebase).
   - Create the schema for Users, Parking Lots, Slots, and Tickets.
-- [ ] **Task 1.3: Design System & Wireframes** (Xyra)
+- [x] **Task 1.3: Design System & Wireframes** (Xyra)
   - Finalize color scheme (PUP Maroon/Gold) and UI layout.
   - Setup reusable UI components (Buttons, Cards, Inputs).
 
@@ -73,9 +73,13 @@ Here is the chronological sequence of tasks to build the system from start to fi
   - Connect the grid UI to the booking API.
 
 ### Phase 4: Digital Ticket & Checkout
-- [ ] **Task 4.1: Ticket API endpoints** (Elizander)
+- [ ] **Task 4.1: Upgrade Auth to SSR Middleware** (Elizander)
+  - Install `@supabase/ssr` package.
+  - Implement Next.js App Router Middleware for automatic session refreshes and server-side cookie management.
+  - Update client and server utilities to securely handle SSR auth.
+- [ ] **Task 4.2: Ticket API endpoints** (Elizander)
   - Create endpoints to fetch ticket details and handle checkout/exit.
-- [ ] **Task 4.2: Digital Ticket UI** (Edrian)
+- [ ] **Task 4.3: Digital Ticket UI** (Edrian)
   - Build the Digital Ticket view (`/ticket`).
   - Generate and display a QR Code for the active session.
   - Implement the "Complete Parking / Checkout" flow.
@@ -190,7 +194,3 @@ Assuming a standard modern Javascript project structure (e.g., React/Vite or Nex
 
 > [!NOTE]
 > This plan focuses on creating a high-quality minimum viable product (MVP) for your PUP Manila test. We will prioritize smooth UI micro-animations and a dynamic, responsive design to make a strong impression.
-
-## User Review Required
-
-Please review the updated task distribution and the implementation steps. If you approve this plan, I am ready to start initializing the Next.js project and building the foundation!
