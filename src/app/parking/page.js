@@ -205,7 +205,7 @@ export default function ParkingPage() {
 
   if (isLoadingUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
         <div className="flex flex-col items-center gap-6">
           <div className="relative w-20 h-20 flex items-center justify-center">
             <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
@@ -710,13 +710,7 @@ export default function ParkingPage() {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 dark:border-white/10 py-6 mt-12 bg-white/50 dark:bg-black/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400 dark:text-zinc-500">
-          <p>© 2025 Parqify — PUP Manila Community Parking System</p>
-          <p>Polytechnic University of the Philippines</p>
-        </div>
-      </footer>
+      {/* Footer removed to use global footer */}
     </div>
   );
 }

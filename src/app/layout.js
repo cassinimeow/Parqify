@@ -18,8 +18,8 @@ const outfitFont = Outfit({
 });
 
 export const metadata = {
-  title: "Parqify - PUP ITECH Community Parking",
-  description: "Real-time smart parking selection and reservation system for PUP ITECH.",
+  title: "Parqify - PUP Community Parking",
+  description: "Real-time smart parking selection and reservation system for the PUP Community.",
 };
 
 export default function RootLayout({ children }) {

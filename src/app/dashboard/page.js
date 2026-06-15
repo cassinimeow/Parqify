@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
         <div className="flex flex-col items-center gap-6">
           <div className="relative w-20 h-20 flex items-center justify-center">
             <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
@@ -405,17 +405,7 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-gray-100 dark:border-white/10 relative z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-gray-400 dark:text-zinc-500">
-            © 2025 Parqify — PUP Manila Community Parking System
-          </p>
-          <p className="text-xs text-gray-400 dark:text-zinc-500">
-            {profile?.email || user?.email || ''}
-          </p>
-        </div>
-      </footer>
+
 
       {/* All History Modal */}
       {showAllHistory && (

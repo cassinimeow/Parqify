@@ -12,13 +12,13 @@ export default function Footer() {
           {/* Brand & Mission */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg overflow-hidden bg-brand-maroon-800 flex items-center justify-center p-1">
-                <img src="/parqify.ico" alt="Parqify Logo" className="w-full h-full object-contain filter brightness-0 invert" />
+              <div className="w-8 h-8 rounded-lg shadow-md overflow-hidden bg-white">
+                <img src="/parqify.ico" alt="Parqify Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-xl font-bold font-outfit text-zinc-900 dark:text-white">Parqify</span>
             </div>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Smart Parking System for the PUP ITECH Community. Built to make campus parking seamless and efficient.
+              Smart Parking System for the PUP Community. Built to make campus parking seamless and efficient.
             </p>
           </div>
 
@@ -37,7 +37,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
+                <Link href="/ticket" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
                   My Tickets
                 </Link>
               </li>
@@ -69,7 +69,7 @@ export default function Footer() {
             &copy; {currentYear} Parqify. All rights reserved.
           </p>
           <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-            Built with <span className="text-brand-maroon-800 dark:text-brand-maroon-400">❤</span> by Team Parqify | PUP ITECH
+            Built with <span className="text-brand-maroon-800 dark:text-brand-maroon-400">❤</span> by Team Parqify | PUP Community
           </div>
         </div>
       </div>
