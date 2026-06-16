@@ -13,11 +13,27 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [expandedTicketId, setExpandedTicketId] = useState(null);
+  const [expandedModalTicketId, setExpandedModalTicketId] = useState(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
 
   const toggleTicket = (id) => {
     setExpandedTicketId(expandedTicketId === id ? null : id);
   };
+
+  const toggleModalTicket = (id) => {
+    setExpandedModalTicketId(expandedModalTicketId === id ? null : id);
+  };
+
+  useEffect(() => {
+    if (showAllHistory) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAllHistory]);
 
   useEffect(() => {
     async function fetchUserAndTickets() {
@@ -100,25 +116,24 @@ export default function DashboardPage() {
             <span className="text-lg font-bold font-outfit tracking-tight text-gray-900 dark:text-white">Parqify</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-gold-50 dark:bg-brand-gold-950/30 border border-brand-gold-200 dark:border-brand-gold-900/30">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-semibold text-brand-gold-800 dark:text-brand-gold-400">Online</span>
-            </div>
+          <div className="flex items-center gap-4 sm:gap-3">
+
             
-            <Button variant="ghost" size="sm" onClick={() => router.push('/settings')}>
-              <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              </svg>
-              Settings
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={isLoggingOut}>
-              <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-              </svg>
-              Logout
-            </Button>
+            <div className="flex items-center gap-0.5 sm:gap-3">
+              <Button variant="ghost" size="sm" onClick={() => router.push('/settings')} className="!p-2 sm:!px-3 sm:!py-1.5">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout} isLoading={isLoggingOut} className="!p-2 sm:!px-3 sm:!py-1.5">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-1.5 translate-x-0.5 sm:translate-x-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                </svg>
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
@@ -127,17 +142,35 @@ export default function DashboardPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Welcome Section */}
         <div className="flex items-center gap-5">
-          {profile?.avatar_url && (
-            <div className="w-20 h-20 rounded-full border-4 border-white dark:border-zinc-900 shadow-lg overflow-hidden shrink-0">
-              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover select-none" onContextMenu={(e) => e.preventDefault()} draggable={false} />
-            </div>
-          )}
+          <div className="relative shrink-0">
+            {profile?.avatar_url ? (
+              <div className="w-20 h-20 rounded-full border-4 border-white dark:border-zinc-950 shadow-lg overflow-hidden bg-gray-100 dark:bg-zinc-800">
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover select-none" onContextMenu={(e) => e.preventDefault()} draggable={false} />
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-full border-4 border-white dark:border-zinc-950 shadow-lg overflow-hidden bg-brand-maroon-50 dark:bg-zinc-800 flex items-center justify-center">
+                <span className="text-3xl font-bold text-brand-maroon-800 dark:text-zinc-400">
+                  {(profile?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            
+            {/* Online Status Dot */}
+            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-4 border-white dark:border-zinc-950 rounded-full shadow-sm"></div>
+          </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-brand-maroon-800 dark:text-brand-maroon-400 uppercase tracking-wider">
               {greeting}
             </p>
-            <h1 className="text-3xl sm:text-4xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white flex items-center gap-3 flex-wrap">
               {displayName}
+              <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold tracking-widest uppercase align-middle shadow-sm ${
+                profile?.is_super_admin ? 'bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' :
+                profile?.is_admin ? 'bg-brand-maroon-100 text-brand-maroon-800 border border-brand-maroon-200 dark:bg-brand-maroon-900/30 dark:text-brand-maroon-400 dark:border-brand-maroon-800' :
+                'bg-brand-gold-100 text-brand-gold-800 border border-brand-gold-200 dark:bg-brand-gold-900/30 dark:text-brand-gold-400 dark:border-brand-gold-800'
+              }`}>
+                {profile?.is_super_admin ? 'SUPER ADMIN' : profile?.is_admin ? 'ADMIN' : 'USER'}
+              </span>
             </h1>
             <p className="text-gray-500 dark:text-gray-400">
               Welcome to your parking dashboard. Here&apos;s your overview.
@@ -428,7 +461,7 @@ export default function DashboardPage() {
               {tickets.map(ticket => (
                 <div key={ticket.id} className="border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 rounded-xl overflow-hidden flex flex-col transition-all shrink-0 shadow-sm hover:shadow-md">
                   <div 
-                    onClick={() => toggleTicket(ticket.id)}
+                    onClick={() => toggleModalTicket(ticket.id)}
                     className="p-4 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-4">
@@ -463,7 +496,7 @@ export default function DashboardPage() {
                         {ticket.status}
                       </span>
                       <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
-                        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedModalTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                         </svg>
                       </div>
@@ -471,7 +504,7 @@ export default function DashboardPage() {
                   </div>
                   
                   {/* Expanded Details */}
-                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedTicketId === ticket.id ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedModalTicketId === ticket.id ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
                     <div className="px-4 pb-0 pt-2">
                       <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-2 gap-4 border border-gray-100 dark:border-zinc-800">
                         <div>

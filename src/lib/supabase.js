@@ -19,7 +19,13 @@ export async function getSupabase() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              const opts = { ...options };
+              if (opts.maxAge !== 0) {
+                opts.maxAge = 604800;
+                opts.expires = new Date(Date.now() + 604800 * 1000);
+              }
+              opts.path = '/';
+              cookieStore.set(name, value, opts);
             });
           } catch (error) {
             // The `set` method was called from a Server Component.

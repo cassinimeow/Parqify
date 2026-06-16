@@ -268,7 +268,7 @@ export default function ParkingPage() {
       </nav>
 
       {/* Main Grid Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
+      <main className="max-w-6xl mx-auto px-6 sm:px-8 py-8 flex-1 w-full space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white">
@@ -336,7 +336,7 @@ export default function ParkingPage() {
                           : 'border-gray-200 hover:border-gray-300 dark:border-zinc-800 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/80'
                       }`}
                     >
-                      <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full min-h-[110px]">
+                      <div className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[110px]">
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <span className={`text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 ${
@@ -373,7 +373,7 @@ export default function ParkingPage() {
                             {lot.total_slots} {lot.total_slots === 1 ? 'SLOT' : 'SLOTS'}
                           </span>
                         </div>
-                      </CardContent>
+                      </div>
                     </Card>
                   );
                 })}
@@ -420,22 +420,22 @@ export default function ParkingPage() {
                     <p className="text-sm text-gray-400">No slots created for this lot yet.</p>
                   ) : (
                     /* The 2D top-down visual map design */
-                    <div className="w-full max-w-2xl bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800/80 rounded-2xl p-6 shadow-inner relative">
+                    <div className="w-full max-w-2xl bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-800/80 rounded-2xl p-2 sm:p-6 mt-6 sm:mt-4 shadow-inner relative">
                       
                       {/* Top/Gate entry indicator */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 bg-brand-gold-500 text-brand-gold-950 text-[10px] font-extrabold uppercase rounded-full shadow-md tracking-wider border border-brand-gold-400 select-none">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 bg-brand-gold-500 text-brand-gold-950 text-[10px] font-extrabold uppercase rounded-full shadow-md tracking-wider border border-brand-gold-400 select-none whitespace-nowrap">
                         ▲ PUP GATE - ENTRY
                       </div>
 
                       {/* Main road lane in center */}
-                      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-12 border-dashed border-r border-l border-zinc-200 dark:border-zinc-800 flex items-center justify-center pointer-events-none select-none">
+                      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-8 sm:w-12 border-dashed border-r border-l border-zinc-200 dark:border-zinc-800 flex items-center justify-center pointer-events-none select-none">
                         <div className="h-full w-[2px] bg-dashed border-zinc-300 dark:border-zinc-700 flex flex-col justify-around py-8 text-[10px] font-extrabold text-zinc-300 dark:text-zinc-700 writing-mode-vertical uppercase tracking-widest leading-none">
                           <span>D R I V E W A Y</span>
                         </div>
                       </div>
 
                       {/* Two Columns Grid for Parking Spaces */}
-                      <div className="grid grid-cols-2 gap-16 relative z-10 py-6">
+                      <div className="grid grid-cols-2 gap-x-12 sm:gap-x-20 gap-y-4 relative z-10 py-6">
                         
                         {/* Left Side Slots */}
                         <div className="space-y-4 pr-2">
@@ -453,7 +453,7 @@ export default function ParkingPage() {
                                 key={slot.id}
                                 disabled={!isAvailable}
                                 onClick={() => setSelectedSlot(slot)}
-                                className={`w-full py-4 px-3 rounded-xl border flex items-center justify-between text-left transition-all duration-200 active:scale-[0.98] ${
+                                className={`w-full py-3 sm:py-4 px-2 sm:px-3 rounded-xl border flex flex-col xl:flex-row items-center justify-center xl:justify-between text-center xl:text-left gap-1 xl:gap-0 transition-all duration-200 active:scale-[0.98] ${
                                   isSelected
                                     ? 'bg-brand-gold-500/10 border-brand-gold-600 ring-2 ring-brand-gold-500/40 text-brand-gold-950 dark:text-brand-gold-400 shadow-md font-bold hover:scale-[1.02]'
                                     : isAvailable
@@ -463,9 +463,9 @@ export default function ParkingPage() {
                                     : 'bg-amber-500/5 border-amber-500/20 text-amber-500 dark:text-amber-800/60 cursor-not-allowed select-none'
                                 }`}
                               >
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                                   {/* Color Indicator Bullet */}
-                                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                                  <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0 ${
                                     isSelected ? 'bg-brand-gold-600 animate-pulse' :
                                     isAvailable ? 'bg-emerald-500' :
                                     isOccupied ? 'bg-red-500' : 'bg-amber-500'
@@ -475,7 +475,7 @@ export default function ParkingPage() {
                                   </span>
                                 </div>
 
-                                <span className="text-[10px] uppercase font-bold tracking-wider opacity-85">
+                                <span className="text-[8px] sm:text-[10px] uppercase font-bold tracking-wider opacity-85 mt-0.5 xl:mt-0">
                                   {isSelected ? 'Selected' : slot.status.toLowerCase()}
                                 </span>
                               </button>
@@ -499,7 +499,7 @@ export default function ParkingPage() {
                                 key={slot.id}
                                 disabled={!isAvailable}
                                 onClick={() => setSelectedSlot(slot)}
-                                className={`w-full py-4 px-3 rounded-xl border flex items-center justify-between text-left transition-all duration-200 active:scale-[0.98] ${
+                                className={`w-full py-3 sm:py-4 px-2 sm:px-3 rounded-xl border flex flex-col xl:flex-row items-center justify-center xl:justify-between text-center xl:text-left gap-1 xl:gap-0 transition-all duration-200 active:scale-[0.98] ${
                                   isSelected
                                     ? 'bg-brand-gold-500/10 border-brand-gold-600 ring-2 ring-brand-gold-500/40 text-brand-gold-950 dark:text-brand-gold-400 shadow-md font-bold hover:scale-[1.02]'
                                     : isAvailable
@@ -509,8 +509,8 @@ export default function ParkingPage() {
                                     : 'bg-amber-500/5 border-amber-500/20 text-amber-500 dark:text-amber-800/60 cursor-not-allowed select-none'
                                 }`}
                               >
-                                <div className="flex items-center gap-3">
-                                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                                  <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0 ${
                                     isSelected ? 'bg-brand-gold-600 animate-pulse' :
                                     isAvailable ? 'bg-emerald-500' :
                                     isOccupied ? 'bg-red-500' : 'bg-amber-500'
@@ -520,7 +520,7 @@ export default function ParkingPage() {
                                   </span>
                                 </div>
 
-                                <span className="text-[10px] uppercase font-bold tracking-wider opacity-85">
+                                <span className="text-[8px] sm:text-[10px] uppercase font-bold tracking-wider opacity-85 mt-0.5 xl:mt-0">
                                   {isSelected ? 'Selected' : slot.status.toLowerCase()}
                                 </span>
                               </button>

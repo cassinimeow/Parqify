@@ -1,13 +1,19 @@
+"use client";
+
 import Link from 'next/link';
 import { Code } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+
+  // The footer now shows on the landing page, but hides certain sections.
 
   return (
     <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className={`grid grid-cols-1 ${pathname === '/' ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-8`}>
           
           {/* Brand & Mission */}
           <div className="space-y-4">
@@ -23,26 +29,28 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h4 className="font-semibold text-zinc-900 dark:text-white mb-4">Quick Navigation</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/dashboard" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link href="/parking" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
-                  Find Parking
-                </Link>
-              </li>
-              <li>
-                <Link href="/ticket" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
-                  My Tickets
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {pathname !== '/' && (
+            <div>
+              <h4 className="font-semibold text-zinc-900 dark:text-white mb-4">Quick Navigation</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/dashboard" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/parking" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
+                    Find Parking
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/ticket" className="text-zinc-600 dark:text-zinc-400 hover:text-brand-maroon-800 dark:hover:text-brand-maroon-400 transition-colors">
+                    My Tickets
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
 
           {/* Connect & GitHub */}
           <div>

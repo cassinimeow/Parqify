@@ -24,9 +24,15 @@ export async function updateSession(request) {
           supabaseResponse = NextResponse.next({
             request,
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const opts = { ...options };
+            if (opts.maxAge !== 0) {
+              opts.maxAge = 604800;
+              opts.expires = new Date(Date.now() + 604800 * 1000);
+            }
+            opts.path = '/';
+            supabaseResponse.cookies.set(name, value, opts);
+          });
         },
       },
     }
