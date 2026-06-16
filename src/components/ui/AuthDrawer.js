@@ -15,6 +15,9 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSignupOtpInput, setShowSignupOtpInput] = useState(false);
+  const [signupEmail, setSignupEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
 
   // Sync mode when reopened
   useEffect(() => {
@@ -23,6 +26,9 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       setIsForgotPassword(false);
       setError('');
       setSuccess('');
+      setShowSignupOtpInput(false);
+      setSignupEmail('');
+      setOtpCode('');
     }
   }, [isOpen, initialMode]);
 
@@ -56,6 +62,38 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
     setError('');
   }
 
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signupEmail, token: otpCode, type: 'signup' }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Invalid verification code.');
+        return;
+      }
+
+      setSuccess('Verification successful! Redirecting to dashboard...');
+      setTimeout(() => {
+        router.push('/dashboard');
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError('Failed to verify code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setIsLoading(true);
@@ -71,7 +109,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
         });
         const data = await res.json();
         if (!res.ok) { setError(data.error || 'Something went wrong'); return; }
-        setSuccess('Password reset link sent! Please check your email.');
+        setSuccess('Password reset link sent! Please check your email (including your spam folder).');
         setIsForgotPassword(false);
         setIsLoading(false);
         return;
@@ -102,8 +140,9 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       }
 
       if (isSignUp) {
-        setSuccess('Account created! Please check your email to confirm your account before signing in.');
-        setIsSignUp(false);
+        setSignupEmail(form.email);
+        setShowSignupOtpInput(true);
+        setSuccess('Account created! A 6-digit verification code has been sent to your email (including your spam folder). Please enter it below to confirm.');
         setForm({ ...form, full_name: '', pup_id: '', password: '', confirm_password: '' });
       } else {
         router.push('/dashboard');
@@ -147,10 +186,12 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
         <div className="p-6">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-              {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
+              {showSignupOtpInput ? 'Confirm Code' : isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              {isForgotPassword
+              {showSignupOtpInput
+                ? `Enter the 6-digit code sent to ${signupEmail}`
+                : isForgotPassword
                 ? 'Enter your email to receive a reset link'
                 : isSignUp
                 ? 'Register with your PUP credentials'
@@ -158,7 +199,72 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {showSignupOtpInput ? (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-sm text-red-700 dark:text-red-400 animate-in">
+                  <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 text-sm text-green-700 dark:text-green-400 animate-in">
+                  <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  {success}
+                </div>
+              )}
+
+              <Input
+                id="otpCode"
+                name="otpCode"
+                type="text"
+                label="Verification Code"
+                placeholder="123456"
+                maxLength={10}
+                value={otpCode}
+                onChange={(e) => {
+                  setOtpCode(e.target.value.replace(/[^0-9]/g, ''));
+                  setError('');
+                }}
+                required
+                icon={
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                }
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                isLoading={isLoading}
+                className="w-full mt-4"
+              >
+                Confirm Verification
+              </Button>
+
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSignupOtpInput(false);
+                    setError('');
+                    setSuccess('');
+                  }}
+                  className="text-sm font-semibold text-brand-maroon-800 hover:text-brand-maroon-700 dark:text-brand-maroon-400 dark:hover:text-brand-maroon-300 underline-offset-2 hover:underline transition-colors"
+                >
+                  Back to Sign Up
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* Error / Success Messages */}
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-sm text-red-700 dark:text-red-400 animate-in">
@@ -331,6 +437,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
               {isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'}
             </Button>
           </form>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-zinc-500 dark:text-zinc-400">

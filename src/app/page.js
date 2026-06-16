@@ -5,10 +5,10 @@ import ParticlesBackground from '@/components/ui/ParticlesBackground';
 
 export default async function Home() {
   const supabase = await getSupabase();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
   // If user is already logged in, skip landing page and go to dashboard
-  if (session) {
+  if (user) {
     redirect('/dashboard');
   }
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import Button from '@/components/ui/Button';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { createClient } from '@supabase/supabase-js';
@@ -156,7 +157,7 @@ export default function SettingsPage() {
         if (!reauthRes.ok) throw new Error(reauthData.error || 'Failed to send OTP.');
         
         setShowOtpInput(true);
-        setSecurityMessage({ type: 'success', text: 'A 6-digit verification code has been sent to your email. Please enter it below to confirm.' });
+        setSecurityMessage({ type: 'success', text: 'A 6-digit verification code has been sent to your email. Please check your inbox (including your spam folder) and enter it below to confirm.' });
         setIsSavingSecurity(false);
         return;
       }
@@ -188,19 +189,7 @@ export default function SettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-20 h-20 flex items-center justify-center">
-            <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
-            <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
-          </div>
-          <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
-            Loading Settings...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading Settings..." />;
   }
 
   return (

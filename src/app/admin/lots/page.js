@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 
@@ -210,19 +211,7 @@ export default function AdminLotsPage() {
   }
 
   if (isVerifying) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-20 h-20 flex items-center justify-center">
-            <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
-            <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
-          </div>
-          <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
-            Loading Admin Dashboard...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading Admin Dashboard..." />;
   }
 
   return (

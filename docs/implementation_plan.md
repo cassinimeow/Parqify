@@ -54,32 +54,32 @@ Here is the chronological sequence of tasks to build the system from start to fi
   - Setup reusable UI components (Buttons, Cards, Inputs).
 
 ### Phase 2: Core Authentication & Dashboard
-- [ ] **Task 2.1: Auth Backend** (Elizander)
+- [x] **Task 2.1: Auth Backend** (Elizander)
   - Implement login/registration API endpoints.
-- [ ] **Task 2.2: Auth Frontend** (Christian)
+- [x] **Task 2.2: Auth Frontend** (Christian)
   - Build Login and Registration UI (`/login`).
   - Connect UI to backend Auth endpoints.
-- [ ] **Task 2.3: Home Dashboard** (Christian)
+- [x] **Task 2.3: Home Dashboard** (Christian)
   - Build Dashboard UI (`/dashboard`).
   - Fetch and display basic user data and active ticket status.
 
 ### Phase 3: Parking Selection System
-- [ ] **Task 3.1: Parking API endpoints** (Elizander)
+- [x] **Task 3.1: Parking API endpoints** (Elizander)
   - Create endpoints to fetch lots, fetch slots per lot, and create a booking.
-- [ ] **Task 3.2: Interactive Map & Grid UI** (Johann)
+- [x] **Task 3.2: Interactive Map & Grid UI** (Johann)
   - Build the parking lot selection UI.
   - Build the interactive grid showing slots (Green/Red based on status).
-- [ ] **Task 3.3: Booking Integration** (Johann)
+- [x] **Task 3.3: Booking Integration** (Johann)
   - Connect the grid UI to the booking API.
 
 ### Phase 4: Digital Ticket & Checkout
-- [ ] **Task 4.1: Upgrade Auth to SSR Middleware** (Elizander)
+- [x] **Task 4.1: Upgrade Auth to SSR Middleware** (Elizander)
   - Install `@supabase/ssr` package.
   - Implement Next.js App Router Middleware for automatic session refreshes and server-side cookie management.
   - Update client and server utilities to securely handle SSR auth.
-- [ ] **Task 4.2: Ticket API endpoints** (Elizander)
+- [x] **Task 4.2: Ticket API endpoints** (Elizander)
   - Create endpoints to fetch ticket details and handle checkout/exit.
-- [ ] **Task 4.3: Digital Ticket UI** (Edrian)
+- [x] **Task 4.3: Digital Ticket UI** (Edrian)
   - Build the Digital Ticket view (`/ticket`).
   - Generate and display a QR Code for the active session.
   - Implement the "Complete Parking / Checkout" flow.
@@ -95,9 +95,9 @@ Here is the chronological sequence of tasks to build the system from start to fi
   - Ensure the Parking Grid UI reflects the simulation state change immediately (e.g., polling or WebSockets).
 
 ### Phase 6: Polish & QA
-- [ ] **Task 6.1: End-to-End Testing** (Xyra / Team)
+- [x] **Task 6.1: End-to-End Testing** (Xyra / Team)
   - Test the entire flow from Login -> Booking -> Simulation Scan -> Checkout.
-- [ ] **Task 6.2: UI/UX Polish** (Xyra)
+- [x] **Task 6.2: UI/UX Polish** (Xyra)
   - Refine micro-animations, verify mobile responsiveness, and clean up the aesthetic.
 
 ---

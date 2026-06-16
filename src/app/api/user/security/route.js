@@ -40,7 +40,7 @@ export async function POST(request) {
 
     let message = 'Security settings updated successfully';
     if (email) {
-      message = 'Please check your new email inbox to confirm the email change.';
+      message = 'Please check your new email inbox (including your spam folder) to confirm the email change.';
     }
 
     return NextResponse.json({ message, user: data.user });

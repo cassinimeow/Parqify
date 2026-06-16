@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -77,19 +78,7 @@ export default function DashboardPage() {
   }
 
   if (isLoading || isLoggingOut) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-20 h-20 flex items-center justify-center">
-            <div className="absolute inset-0 bg-brand-maroon-100 dark:bg-brand-maroon-900/30 rounded-3xl animate-ping opacity-50"></div>
-            <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
-          </div>
-          <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
-            {isLoggingOut ? 'Logging Out...' : 'Loading Dashboard...'}
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message={isLoggingOut ? 'Logging Out...' : 'Loading Dashboard...'} />;
   }
 
   const displayName = profile?.full_name || user?.email || 'User';
