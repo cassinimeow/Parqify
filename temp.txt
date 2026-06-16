@@ -1,0 +1,11 @@
+﻿
+FullName                                                                              
+--------                                                                              
+C:\Users\cassini-san\Documents\GitHub\Parqify\src\app                                 
+C:\Users\cassini-san\Documents\GitHub\Parqify\src\components                          
+C:\Users\cassini-san\Documents\GitHub\Parqify\src\app\parking                         
+C:\Users\cassini-san\Documents\GitHub\Parqify\src\app\parking\manage                  
+C:\Users\cassini-san\Documents\GitHub\Parqify\src\components\ui                       
+C:\Users\cassini-san\Documents\GitHub\Parqify\src\components\ui\AccessibilityWidget.js
+
+
