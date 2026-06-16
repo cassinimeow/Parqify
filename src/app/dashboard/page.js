@@ -164,13 +164,25 @@ export default function DashboardPage() {
             </p>
             <h1 className="text-3xl sm:text-4xl font-bold font-outfit tracking-tight text-gray-900 dark:text-white flex items-center gap-3 flex-wrap">
               {displayName}
-              <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold tracking-widest uppercase align-middle shadow-sm ${
-                profile?.is_super_admin ? 'bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' :
-                profile?.is_admin ? 'bg-brand-maroon-100 text-brand-maroon-800 border border-brand-maroon-200 dark:bg-brand-maroon-900/30 dark:text-brand-maroon-400 dark:border-brand-maroon-800' :
-                'bg-brand-gold-100 text-brand-gold-800 border border-brand-gold-200 dark:bg-brand-gold-900/30 dark:text-brand-gold-400 dark:border-brand-gold-800'
-              }`}>
-                {profile?.is_super_admin ? 'SUPER ADMIN' : profile?.is_admin ? 'ADMIN' : 'USER'}
-              </span>
+              <div className="group relative flex items-center cursor-help">
+                <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold tracking-widest uppercase shadow-sm ${
+                  profile?.is_super_admin ? 'bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' :
+                  profile?.is_admin ? 'bg-brand-maroon-100 text-brand-maroon-800 border border-brand-maroon-200 dark:bg-brand-maroon-900/30 dark:text-brand-maroon-400 dark:border-brand-maroon-800' :
+                  'bg-brand-gold-100 text-brand-gold-800 border border-brand-gold-200 dark:bg-brand-gold-900/30 dark:text-brand-gold-400 dark:border-brand-gold-800'
+                }`}>
+                  {profile?.is_super_admin ? 'SUPER ADMIN' : profile?.is_admin ? 'ADMIN' : 'USER'}
+                </span>
+                
+                {/* Tooltip */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2.5 bg-gray-900 dark:bg-zinc-800 text-white text-[10px] sm:text-xs leading-relaxed rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50 text-center font-normal pointer-events-none tracking-normal font-sans">
+                  {profile?.is_super_admin 
+                    ? 'Full system access: Manage users, override parking statuses, and configure system settings.' 
+                    : profile?.is_admin 
+                    ? 'Administrative access: Manage parking slots and monitor activity logs.' 
+                    : 'Standard access: Reserve and manage your own parking slots.'}
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900 dark:border-t-zinc-800"></div>
+                </div>
+              </div>
             </h1>
             <p className="text-gray-500 dark:text-gray-400">
               Welcome to your parking dashboard. Here&apos;s your overview.
