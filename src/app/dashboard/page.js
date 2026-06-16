@@ -70,13 +70,13 @@ export default function DashboardPage() {
     setIsLoggingOut(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
+      window.location.href = '/';
     } catch (err) {
       setIsLoggingOut(false);
     }
   }
 
-  if (isLoading) {
+  if (isLoading || isLoggingOut) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-brand-maroon-50 via-white to-brand-gold-50 dark:from-brand-maroon-950 dark:via-zinc-950 dark:to-brand-gold-950">
         <div className="flex flex-col items-center gap-6">
@@ -85,7 +85,7 @@ export default function DashboardPage() {
             <img src="/parqify.ico" alt="Parqify Logo" className="w-16 h-16 animate-spin relative z-10 drop-shadow-xl" style={{ animationDuration: '3s' }} />
           </div>
           <p className="text-sm font-bold text-brand-maroon-800 dark:text-brand-maroon-400 font-outfit tracking-widest uppercase animate-pulse">
-            Loading Dashboard...
+            {isLoggingOut ? 'Logging Out...' : 'Loading Dashboard...'}
           </p>
         </div>
       </div>

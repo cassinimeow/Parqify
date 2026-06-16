@@ -57,53 +57,89 @@ body {
   min-height: 100vh;
 }
 
-/* High Contrast Theme Overrides */
-.high-contrast {
-  --background: #000000 !important;
-  --foreground: #ffffff !important;
-  
-  /* Force all maroon branding to black or yellow */
-  --color-brand-maroon-50: #000000 !important;
-  --color-brand-maroon-100: #000000 !important;
-  --color-brand-maroon-200: #000000 !important;
-  --color-brand-maroon-300: #000000 !important;
-  --color-brand-maroon-400: #000000 !important;
-  --color-brand-maroon-500: #000000 !important;
-  --color-brand-maroon-600: #ffff00 !important;
-  --color-brand-maroon-700: #000000 !important;
-  --color-brand-maroon-800: #000000 !important;
-  --color-brand-maroon-900: #000000 !important;
-  --color-brand-maroon-950: #000000 !important;
-
-  /* Force all gold branding to high-contrast yellow */
-  --color-brand-gold-50: #000000 !important;
-  --color-brand-gold-100: #000000 !important;
-  --color-brand-gold-200: #000000 !important;
-  --color-brand-gold-300: #000000 !important;
-  --color-brand-gold-400: #000000 !important;
-  --color-brand-gold-500: #ffff00 !important;
-  --color-brand-gold-600: #ffff00 !important;
-  --color-brand-gold-700: #ffff00 !important;
-  --color-brand-gold-800: #000000 !important;
-  --color-brand-gold-900: #000000 !important;
-  --color-brand-gold-950: #000000 !important;
-}
-
-.high-contrast * {
-  /* Strip gradients and shadows for maximum readability */
-  background-image: none !important;
-  box-shadow: none !important;
-}
-
-.high-contrast .bg-white, .high-contrast .bg-zinc-950, .high-contrast .bg-zinc-900, .high-contrast .dark\:bg-zinc-950 {
+/* High Contrast Theme Overrides (Brute Force) */
+.high-contrast, .high-contrast body, .high-contrast main {
   background-color: #000000 !important;
-}
-
-.high-contrast .text-zinc-500, .high-contrast .text-zinc-400, .high-contrast .text-zinc-600, .high-contrast .text-gray-500 {
+  background-image: none !important;
   color: #ffffff !important;
 }
 
-.high-contrast .border-zinc-200, .high-contrast .border-zinc-800, .high-contrast .border-gray-100 {
+.high-contrast * {
+  /* Strip all gradients, box shadows, background images, and blurs */
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Force backgrounds of cards, panels, overlays, and navbar to solid black */
+.high-contrast [class*="bg-white"], 
+.high-contrast [class*="bg-zinc-"], 
+.high-contrast [class*="bg-gray-"], 
+.high-contrast [class*="bg-black"],
+.high-contrast [class*="bg-brand-"]:not([class*="bg-brand-maroon-500"]):not([class*="bg-brand-maroon-600"]):not([class*="bg-brand-gold-500"]):not([class*="bg-brand-gold-600"]) {
+  background-color: #000000 !important;
+}
+
+/* Gradients (like the loading screen) also need a solid black fallback */
+.high-contrast [class*="bg-gradient-"] {
+  background-color: #000000 !important;
+}
+
+/* Make all text white by default, specifically overriding Tailwind gray/zinc/maroon text */
+.high-contrast h1, .high-contrast h2, .high-contrast h3, .high-contrast h4, .high-contrast h5, .high-contrast h6, .high-contrast p, .high-contrast span, .high-contrast div {
+  color: #ffffff;
+}
+
+.high-contrast [class*="text-gray-"],
+.high-contrast [class*="text-zinc-"],
+.high-contrast [class*="text-brand-"]:not([class*="text-brand-gold-500"]):not([class*="text-brand-gold-600"]) {
+  color: #ffffff !important;
+}
+
+.high-contrast [class*="text-brand-gold-500"],
+.high-contrast [class*="text-brand-gold-600"] {
+  color: #ffff00 !important;
+}
+
+/* Make all interactive elements, accents, and borders bright yellow */
+.high-contrast button, 
+.high-contrast [role="button"], 
+.high-contrast a, 
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea,
+.high-contrast [role="switch"],
+.high-contrast [class*="bg-brand-maroon-500"],
+.high-contrast [class*="bg-brand-maroon-600"],
+.high-contrast [class*="bg-brand-gold-500"],
+.high-contrast [class*="bg-brand-gold-600"] {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+/* Ensure toggle knobs are visible */
+.high-contrast [role="switch"] > span:not(.sr-only) {
+  background-color: #ffff00 !important;
+}
+
+/* Force border colors of structural elements to yellow */
+.high-contrast [class*="border-zinc-"],
+.high-contrast [class*="border-gray-"],
+.high-contrast [class*="border-brand-"],
+.high-contrast [class*="border-white"] {
   border-color: #ffff00 !important;
+}
+
+/* Ensure svgs/icons stand out in yellow */
+.high-contrast svg, .high-contrast svg path {
+  color: #ffff00 !important;
+  stroke: #ffff00 !important;
+  fill: currentColor !important;
+}
+
+/* Turn off canvas particles to reduce visual noise */
+.high-contrast canvas {
+  display: none !important;
 }
 

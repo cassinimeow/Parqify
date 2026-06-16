@@ -24,8 +24,10 @@ export default function AccessibilityWidget() {
 
   const toggleHighContrast = () => {
     if (theme === 'high-contrast') {
-      setTheme('system'); // Revert to system or light/dark
+      const prevTheme = localStorage.getItem('pre_hc_theme') || 'system';
+      setTheme(prevTheme);
     } else {
+      localStorage.setItem('pre_hc_theme', theme);
       setTheme('high-contrast');
     }
   };
