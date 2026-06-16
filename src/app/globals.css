@@ -57,3 +57,53 @@ body {
   min-height: 100vh;
 }
 
+/* High Contrast Theme Overrides */
+.high-contrast {
+  --background: #000000 !important;
+  --foreground: #ffffff !important;
+  
+  /* Force all maroon branding to black or yellow */
+  --color-brand-maroon-50: #000000 !important;
+  --color-brand-maroon-100: #000000 !important;
+  --color-brand-maroon-200: #000000 !important;
+  --color-brand-maroon-300: #000000 !important;
+  --color-brand-maroon-400: #000000 !important;
+  --color-brand-maroon-500: #000000 !important;
+  --color-brand-maroon-600: #ffff00 !important;
+  --color-brand-maroon-700: #000000 !important;
+  --color-brand-maroon-800: #000000 !important;
+  --color-brand-maroon-900: #000000 !important;
+  --color-brand-maroon-950: #000000 !important;
+
+  /* Force all gold branding to high-contrast yellow */
+  --color-brand-gold-50: #000000 !important;
+  --color-brand-gold-100: #000000 !important;
+  --color-brand-gold-200: #000000 !important;
+  --color-brand-gold-300: #000000 !important;
+  --color-brand-gold-400: #000000 !important;
+  --color-brand-gold-500: #ffff00 !important;
+  --color-brand-gold-600: #ffff00 !important;
+  --color-brand-gold-700: #ffff00 !important;
+  --color-brand-gold-800: #000000 !important;
+  --color-brand-gold-900: #000000 !important;
+  --color-brand-gold-950: #000000 !important;
+}
+
+.high-contrast * {
+  /* Strip gradients and shadows for maximum readability */
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .bg-white, .high-contrast .bg-zinc-950, .high-contrast .bg-zinc-900, .high-contrast .dark\:bg-zinc-950 {
+  background-color: #000000 !important;
+}
+
+.high-contrast .text-zinc-500, .high-contrast .text-zinc-400, .high-contrast .text-zinc-600, .high-contrast .text-gray-500 {
+  color: #ffffff !important;
+}
+
+.high-contrast .border-zinc-200, .high-contrast .border-zinc-800, .high-contrast .border-gray-100 {
+  border-color: #ffff00 !important;
+}
+
