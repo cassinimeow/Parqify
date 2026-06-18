@@ -21,19 +21,19 @@ export async function POST(request) {
     
     const updates = {};
     if (email) updates.email = email;
-    if (password) updates.password = password;
+    if (password) {
+      updates.password = password;
+      if (currentPassword) {
+        updates.current_password = currentPassword;
+      }
+    }
     if (nonce) updates.nonce = nonce;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ message: 'No changes provided' });
     }
 
-    const updateOptions = {};
-    if (password && currentPassword) {
-      updateOptions.options = { password: currentPassword };
-    }
-
-    const { data, error } = await supabase.auth.updateUser(updates, updateOptions);
+    const { data, error } = await supabase.auth.updateUser(updates);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
