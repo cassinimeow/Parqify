@@ -320,6 +320,11 @@ export default function SettingsPage() {
                 label="Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value.replace(/[^a-zA-ZñÑ\s.\-]/g, ''))}
+                onBlur={() => {
+                  if (!fullName || fullName.trim() === '') {
+                    setFullName(profile?.full_name || '');
+                  }
+                }}
                 disabled={isGuest}
                 required
               />
@@ -351,6 +356,11 @@ export default function SettingsPage() {
                 label="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => {
+                  if (!email || email.trim() === '') {
+                    setEmail(user?.email || '');
+                  }
+                }}
                 disabled={isGuest || isChangingPassword}
                 required
               />

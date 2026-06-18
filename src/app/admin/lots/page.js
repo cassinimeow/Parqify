@@ -321,7 +321,7 @@ export default function AdminLotsPage() {
                         <h4 className="font-bold font-outfit text-gray-900 dark:text-white">{lot.name}</h4>
                         <p className="text-xs text-gray-500">{lot.total_slots} Slots capacity</p>
                       </div>
-                      {profile?.is_super_admin && (
+                      {(profile?.is_admin || profile?.is_super_admin) && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleDeleteLot(lot.id); }}
                           className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
