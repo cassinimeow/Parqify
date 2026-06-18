@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, expireOldReservations } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 
 /**
@@ -30,6 +30,10 @@ export async function POST(request) {
     }
 
     const supabase = await getSupabase();
+
+    // Automatically release expired reservations before checking availability and booking
+    await expireOldReservations(supabase);
+
 
     // 2. Check if the slot is actually AVAILABLE
     const { data: slotData, error: slotError } = await supabase

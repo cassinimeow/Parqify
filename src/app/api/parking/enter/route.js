@@ -34,11 +34,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Ticket is already active or completed' }, { status: 400 });
     }
 
-    // 1. Update ticket status to ACTIVE
+    // 1. Update ticket status to ACTIVE and set entry_time
     const { error: updateTicketError } = await supabase
       .from('tickets')
       .update({ 
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        entry_time: new Date().toISOString()
       })
       .eq('id', ticket_id);
 

@@ -77,15 +77,49 @@ export default function DashboardPage() {
     }
   }
 
-  if (isLoading || isLoggingOut) {
-    return <LoadingScreen message={isLoggingOut ? 'Logging Out...' : 'Loading Dashboard...'} />;
-  }
-
-  const displayName = profile?.full_name || user?.email || 'User';
+  const isGuest = profile?.pup_id?.startsWith('VISITOR-');
+  const displayName = isGuest ? 'Visitor' : (profile?.full_name || user?.email || 'User');
   const greeting = getGreeting();
   
   const activeTicket = tickets.find(t => t.status === 'ACTIVE' || t.status === 'RESERVED');
   const recentTickets = tickets;
+
+  const [countdown, setCountdown] = useState('');
+
+  useEffect(() => {
+    if (!activeTicket || activeTicket.status !== 'RESERVED') {
+      setCountdown('');
+      return;
+    }
+
+    const expiryTime = new Date(activeTicket.created_at).getTime() + 10 * 60 * 1000;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = expiryTime - now;
+
+      if (diff <= 0) {
+        setCountdown('00:00');
+        clearInterval(interval);
+        // Refresh tickets list to reflect expired state in UI
+        fetch('/api/user/tickets')
+          .then(res => res.ok && res.json())
+          .then(data => {
+            if (data && data.tickets) setTickets(data.tickets);
+          });
+      } else {
+        const minutes = Math.floor(diff / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdown(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeTicket]);
+
+  if (isLoading || isLoggingOut) {
+    return <LoadingScreen message={isLoggingOut ? 'Logging Out...' : 'Loading Dashboard...'} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-maroon-50/50 via-white to-brand-gold-50/50 dark:from-brand-maroon-950 dark:via-[#09090b] dark:to-brand-gold-950 relative overflow-hidden">
@@ -155,16 +189,19 @@ export default function DashboardPage() {
               {displayName}
               <div className="group relative flex items-center cursor-help">
                 <span className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold tracking-widest uppercase shadow-sm ${
+                  isGuest ? 'bg-zinc-100 text-zinc-700 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' :
                   profile?.is_super_admin ? 'bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' :
                   profile?.is_admin ? 'bg-brand-maroon-100 text-brand-maroon-800 border border-brand-maroon-200 dark:bg-brand-maroon-900/30 dark:text-brand-maroon-400 dark:border-brand-maroon-800' :
                   'bg-brand-gold-100 text-brand-gold-800 border border-brand-gold-200 dark:bg-brand-gold-900/30 dark:text-brand-gold-400 dark:border-brand-gold-800'
                 }`}>
-                  {profile?.is_super_admin ? 'SUPER ADMIN' : profile?.is_admin ? 'ADMIN' : 'USER'}
+                  {isGuest ? 'GUEST' : profile?.is_super_admin ? 'SUPER ADMIN' : profile?.is_admin ? 'ADMIN' : 'USER'}
                 </span>
                 
                 {/* Tooltip */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2.5 bg-gray-900 dark:bg-zinc-800 text-white text-[10px] sm:text-xs leading-relaxed rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50 text-center font-normal pointer-events-none tracking-normal font-sans">
-                  {profile?.is_super_admin 
+                  {isGuest 
+                    ? 'Guest access: View parking availability and test system flows with read-only settings.' 
+                    : profile?.is_super_admin 
                     ? 'Full system access: Manage users, override parking statuses, and configure system settings.' 
                     : profile?.is_admin 
                     ? 'Administrative access: Manage parking slots and monitor activity logs.' 
@@ -209,12 +246,22 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              <p className="text-2xl font-bold font-outfit">
-                {activeTicket ? activeTicket.parking_slots?.slot_name : 'None'}
-              </p>
-              <p className="text-sm opacity-70 mt-1 truncate">
-                {activeTicket ? activeTicket.parking_slots?.parking_lots?.name : 'No active parking session'}
-              </p>
+              <div className="flex justify-between items-end mt-1">
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold font-outfit">
+                    {activeTicket ? activeTicket.parking_slots?.slot_name : 'None'}
+                  </p>
+                  <p className="text-sm opacity-70 mt-1 truncate">
+                    {activeTicket ? activeTicket.parking_slots?.parking_lots?.name : 'No active parking session'}
+                  </p>
+                </div>
+                {activeTicket?.status === 'RESERVED' && countdown && (
+                  <div className="flex flex-col items-end shrink-0 text-right font-sans">
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-60">Expires in</span>
+                    <span className="text-xl font-mono font-bold text-brand-gold-400 animate-pulse mt-0.5">{countdown}</span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -361,6 +408,7 @@ export default function DashboardPage() {
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
                             ticket.status === 'ACTIVE' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
                             ticket.status === 'RESERVED' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            ticket.status === 'EXPIRED' ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
                             'bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
                           }`}>
                             {ticket.status === 'ACTIVE' ? (
@@ -372,6 +420,10 @@ export default function DashboardPage() {
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                               </svg>
+                            ) : ticket.status === 'EXPIRED' ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                              </svg>
                             ) : (
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -382,8 +434,8 @@ export default function DashboardPage() {
                             <p className="font-bold text-gray-900 dark:text-white font-outfit">
                               {ticket.parking_slots?.parking_lots?.name || 'Unknown Lot'} • {ticket.parking_slots?.slot_name || 'N/A'}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                              {new Date(ticket.entry_time || ticket.created_at).toLocaleDateString()} at {new Date(ticket.entry_time || ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5 font-mono">
+                              ID: {ticket.id.substring(0, 8).toUpperCase()} • Reserved {new Date(ticket.created_at).toLocaleDateString()} at {new Date(ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
@@ -391,9 +443,10 @@ export default function DashboardPage() {
                           <span className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                             ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                             ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            ticket.status === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
                             'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
                           }`}>
-                            {ticket.status}
+                            {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status}
                           </span>
                           <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
                             <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -406,15 +459,35 @@ export default function DashboardPage() {
                       {/* Expanded Details */}
                       <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedTicketId === ticket.id ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
                         <div className="px-6 pb-2 pt-2">
-                          <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-2 gap-4 border border-gray-100 dark:border-zinc-800">
+                          <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-100 dark:border-zinc-800 font-sans text-xs">
                             <div>
-                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Ticket ID</p>
-                              <p className="text-[10px] sm:text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{ticket.id}</p>
+                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Reserved At</p>
+                              <p className="font-semibold text-gray-700 dark:text-gray-300">
+                                {new Date(ticket.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Exit Time</p>
-                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                {ticket.exit_time ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Not yet exited'}
+                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Occupied At</p>
+                              <p className="font-semibold text-gray-700 dark:text-gray-300">
+                                {ticket.entry_time 
+                                  ? new Date(ticket.entry_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                                  : ticket.status === 'EXPIRED'
+                                  ? 'No Entry (Expired)'
+                                  : ticket.status === 'RESERVED'
+                                  ? 'Pending Scan'
+                                  : 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">
+                                {ticket.status === 'EXPIRED' ? 'Expired At' : 'Exit Time'}
+                              </p>
+                              <p className="font-semibold text-gray-700 dark:text-gray-300">
+                                {ticket.exit_time 
+                                  ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                                  : ticket.status === 'EXPIRED'
+                                  ? 'Timed Out'
+                                  : 'Active Session'}
                               </p>
                             </div>
                           </div>
@@ -469,12 +542,17 @@ export default function DashboardPage() {
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
                         ticket.status === 'ACTIVE' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
                         ticket.status === 'RESERVED' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        ticket.status === 'EXPIRED' ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
                         'bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
                       }`}>
                         {ticket.status === 'ACTIVE' ? (
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
                         ) : ticket.status === 'RESERVED' ? (
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        ) : ticket.status === 'EXPIRED' ? (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                          </svg>
                         ) : (
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         )}
@@ -483,8 +561,8 @@ export default function DashboardPage() {
                         <p className="font-bold text-gray-900 dark:text-white font-outfit">
                           {ticket.parking_slots?.parking_lots?.name || 'Unknown Lot'} • {ticket.parking_slots?.slot_name || 'N/A'}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                          {new Date(ticket.entry_time || ticket.created_at).toLocaleDateString()} at {new Date(ticket.entry_time || ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5 font-mono">
+                          ID: {ticket.id.substring(0, 8).toUpperCase()} • Reserved {new Date(ticket.created_at).toLocaleDateString()} at {new Date(ticket.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>
@@ -492,9 +570,10 @@ export default function DashboardPage() {
                       <span className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block ${
                         ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                         ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        ticket.status === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
                         'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
                       }`}>
-                        {ticket.status}
+                        {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status}
                       </span>
                       <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
                         <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedModalTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -507,15 +586,35 @@ export default function DashboardPage() {
                   {/* Expanded Details */}
                   <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedModalTicketId === ticket.id ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
                     <div className="px-4 pb-0 pt-2">
-                      <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-2 gap-4 border border-gray-100 dark:border-zinc-800">
+                      <div className="bg-gray-50/50 dark:bg-zinc-800/30 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border border-gray-100 dark:border-zinc-800 font-sans text-xs">
                         <div>
-                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Ticket ID</p>
-                          <p className="text-[10px] sm:text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{ticket.id}</p>
+                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Reserved At</p>
+                          <p className="font-semibold text-gray-700 dark:text-gray-300">
+                            {new Date(ticket.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Exit Time</p>
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            {ticket.exit_time ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Not yet exited'}
+                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Occupied At</p>
+                          <p className="font-semibold text-gray-700 dark:text-gray-300">
+                            {ticket.entry_time 
+                              ? new Date(ticket.entry_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                              : ticket.status === 'EXPIRED'
+                              ? 'No Entry (Expired)'
+                              : ticket.status === 'RESERVED'
+                              ? 'Pending Scan'
+                              : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">
+                            {ticket.status === 'EXPIRED' ? 'Expired At' : 'Exit Time'}
+                          </p>
+                          <p className="font-semibold text-gray-700 dark:text-gray-300">
+                            {ticket.exit_time 
+                              ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                              : ticket.status === 'EXPIRED'
+                              ? 'Timed Out'
+                              : 'Active Session'}
                           </p>
                         </div>
                       </div>

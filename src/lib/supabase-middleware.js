@@ -27,8 +27,8 @@ export async function updateSession(request) {
           cookiesToSet.forEach(({ name, value, options }) => {
             const opts = { ...options };
             if (opts.maxAge !== 0) {
-              opts.maxAge = 600;
-              opts.expires = new Date(Date.now() + 600 * 1000);
+              opts.maxAge = 900;
+              opts.expires = new Date(Date.now() + 900 * 1000);
             }
             opts.path = '/';
             supabaseResponse.cookies.set(name, value, opts);
@@ -44,7 +44,22 @@ export async function updateSession(request) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  const user = session?.user;
+  // If a session exists, extend the cookie lifetime (sliding session window)
+  if (session) {
+    const supabaseCookies = request.cookies.getAll().filter(c => c.name.startsWith('sb-'));
+    supabaseCookies.forEach(cookie => {
+      supabaseResponse.cookies.set({
+        name: cookie.name,
+        value: cookie.value,
+        maxAge: 900,
+        expires: new Date(Date.now() + 900 * 1000),
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax'
+      });
+    });
+  }
 
   return supabaseResponse;
 }

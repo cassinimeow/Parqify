@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, expireOldReservations } from '@/lib/supabase';
 
 /**
  * GET /api/parking/slots/[lotId]
@@ -9,6 +9,10 @@ export async function GET(request, { params }) {
   try {
     const { lotId } = await params;
     const supabase = await getSupabase();
+    
+    // Automatically release expired reservations
+    await expireOldReservations(supabase);
+
     
     const { data: slots, error } = await supabase
       .from('parking_slots')

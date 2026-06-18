@@ -21,8 +21,8 @@ export async function getSupabase() {
             cookiesToSet.forEach(({ name, value, options }) => {
               const opts = { ...options };
               if (opts.maxAge !== 0) {
-                opts.maxAge = 600;
-                opts.expires = new Date(Date.now() + 600 * 1000);
+                opts.maxAge = 900;
+                opts.expires = new Date(Date.now() + 900 * 1000);
               }
               opts.path = '/';
               cookieStore.set(name, value, opts);
@@ -37,3 +37,47 @@ export async function getSupabase() {
     }
   );
 }
+
+/**
+ * Checks and expires tickets that have been in RESERVED status for more than 10 minutes.
+ * Frees up the occupied parking slots back to AVAILABLE and sets the tickets to EXPIRED.
+ */
+export async function expireOldReservations(supabase) {
+  try {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    
+    // 1. Get all tickets that are RESERVED and created more than 10 minutes ago
+    const { data: expiredTickets, error: fetchError } = await supabase
+      .from('tickets')
+      .select('id, slot_id')
+      .eq('status', 'RESERVED')
+      .lt('created_at', tenMinutesAgo);
+      
+    if (fetchError || !expiredTickets || expiredTickets.length === 0) {
+      return;
+    }
+    
+    const ticketIds = expiredTickets.map(t => t.id);
+    const slotIds = expiredTickets.map(t => t.slot_id).filter(Boolean);
+    
+    // 2. Update tickets status to EXPIRED and set exit_time to current time
+    await supabase
+      .from('tickets')
+      .update({ 
+        status: 'EXPIRED',
+        exit_time: new Date().toISOString()
+      })
+      .in('id', ticketIds);
+      
+    // 3. Update parking_slots status to AVAILABLE
+    if (slotIds.length > 0) {
+      await supabase
+        .from('parking_slots')
+        .update({ status: 'AVAILABLE' })
+        .in('id', slotIds);
+    }
+  } catch (err) {
+    console.error('Error in expireOldReservations:', err);
+  }
+}
+

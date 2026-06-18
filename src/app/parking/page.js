@@ -20,6 +20,7 @@ export default function ParkingPage() {
   const [isLoadingLots, setIsLoadingLots] = useState(true);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const [error, setError] = useState('');
   const [successTicket, setSuccessTicket] = useState(null);
@@ -593,7 +594,7 @@ export default function ParkingPage() {
                     </div>
                   ) : (
                     <Button
-                      onClick={handleBookSlot}
+                      onClick={() => setShowConfirmModal(true)}
                       disabled={!selectedSlot || isBooking}
                       isLoading={isBooking}
                       variant="primary"
@@ -700,6 +701,49 @@ export default function ParkingPage() {
       )}
 
       {/* Footer removed to use global footer */}
+      {/* Warning Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="mx-auto w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-bold font-outfit text-gray-900 dark:text-white">
+                Confirm Parking Reservation
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 leading-relaxed">
+                You should be within <strong>10 minutes away</strong> from the parking lot. Once confirmed, a 10-minute countdown starts immediately. If you do not occupy the slot within this period, your reservation will automatically expire and the slot will be released for other users.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                disabled={isBooking}
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Go Back
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                isLoading={isBooking}
+                onClick={async () => {
+                  await handleBookSlot();
+                  setShowConfirmModal(false);
+                }}
+              >
+                Agree & Reserve
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

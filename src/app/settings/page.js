@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const isGuest = profile?.pup_id?.startsWith('VISITOR-');
+
   // Theme State
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -157,12 +159,17 @@ export default function SettingsPage() {
         if (!reauthRes.ok) throw new Error(reauthData.error || 'Failed to send OTP.');
         
         setShowOtpInput(true);
-        setSecurityMessage({ type: 'success', text: 'A 6-digit verification code has been sent to your email. Please check your inbox (including your spam folder) and enter it below to confirm.' });
+        setSecurityMessage({ type: 'success', text: 'An 8-digit verification code has been sent to your email. Please check your inbox (including your spam folder) and enter it below to confirm.' });
         setIsSavingSecurity(false);
         return;
       }
 
       if (showOtpInput) {
+        if (!otpCode || otpCode.trim().length < 6) {
+          setSecurityMessage({ type: 'error', text: 'Verification code must be at least 6 characters.' });
+          setIsSavingSecurity(false);
+          return;
+        }
         updates.nonce = otpCode;
       }
 
@@ -235,6 +242,18 @@ export default function SettingsPage() {
 
       <main className="max-w-4xl mx-auto px-4 mt-6 space-y-6">
         
+        {isGuest && (
+          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 text-sm flex items-start gap-3">
+            <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <div>
+              <p className="font-bold font-outfit">Guest Account Mode</p>
+              <p className="mt-0.5 text-xs opacity-90">You are logged in as a Guest Visitor. Public profile modifications and security password/email changes are disabled. You can still adjust appearance themes below.</p>
+            </div>
+          </div>
+        )}
+
         {/* Profile Section */}
         <Card>
           <CardHeader>
@@ -256,16 +275,18 @@ export default function SettingsPage() {
                       </span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 w-8 h-8 bg-white dark:bg-zinc-800 rounded-full border border-gray-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-brand-maroon-800 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                    </svg>
-                  </button>
+                  {!isGuest && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 w-8 h-8 bg-white dark:bg-zinc-800 rounded-full border border-gray-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-brand-maroon-800 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                      </svg>
+                    </button>
+                  )}
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -285,6 +306,7 @@ export default function SettingsPage() {
                 label="Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                disabled={isGuest}
                 required
               />
 
@@ -294,7 +316,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <Button type="submit" isLoading={isSavingProfile} disabled={!(profile && (fullName !== (profile.full_name || '') || avatarFile !== null))}>
+              <Button type="submit" isLoading={isSavingProfile} disabled={isGuest || !(profile && (fullName !== (profile.full_name || '') || avatarFile !== null))}>
                 Save Profile
               </Button>
             </form>
@@ -315,16 +337,18 @@ export default function SettingsPage() {
                 label="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isGuest}
                 required
               />
               <Input
                 id="password"
                 type="password"
                 label="New Password"
-                placeholder="Leave blank to keep current password"
+                placeholder={isGuest ? "Unavailable for guest account" : "Leave blank to keep current password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                helperText="Must be at least 6 characters."
+                disabled={isGuest}
+                helperText={isGuest ? undefined : "Must be at least 6 characters."}
               />
               {password && (
                 <Input
@@ -334,6 +358,7 @@ export default function SettingsPage() {
                   placeholder="Re-type your new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isGuest}
                   required={!!password}
                 />
               )}
@@ -344,10 +369,10 @@ export default function SettingsPage() {
                     id="otpCode"
                     type="text"
                     label="Verification Code (OTP)"
-                    placeholder="Enter 6-digit code"
+                    placeholder="Enter verification code"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    maxLength={6}
+                    maxLength={8}
                     required
                     icon={
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -364,7 +389,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <Button type="submit" variant="outline" isLoading={isSavingSecurity} disabled={!(user && (email !== (user.email || '') || password !== ''))}>
+              <Button type="submit" variant="outline" isLoading={isSavingSecurity} disabled={isGuest || !(user && (email !== (user.email || '') || password !== ''))}>
                 {showOtpInput ? 'Verify and Save' : 'Update Security Settings'}
               </Button>
             </form>

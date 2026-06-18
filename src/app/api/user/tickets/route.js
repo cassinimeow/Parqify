@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, expireOldReservations } from '@/lib/supabase';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,9 @@ export async function GET() {
     }
 
     const supabase = await getSupabase();
+    
+    // Automatically release expired reservations
+    await expireOldReservations(supabase);
     
     // Fetch tickets with joined slot and lot data
     const { data: tickets, error } = await supabase

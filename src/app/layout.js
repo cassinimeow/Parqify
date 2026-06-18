@@ -2,6 +2,7 @@ import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ChatbotWidget from "@/components/ui/ChatbotWidget";
 import AccessibilityWidget from "@/components/ui/AccessibilityWidget";
+import IdleDetector from "@/components/ui/IdleDetector";
 import Footer from "@/components/ui/Footer";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
@@ -32,6 +33,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem themes={['light', 'dark', 'high-contrast']}>
+          <IdleDetector />
           {children}
           <AccessibilityWidget />
           <ChatbotWidget />

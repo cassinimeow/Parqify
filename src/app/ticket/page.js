@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { MapPin, Clock, Car, CheckCircle, ChevronLeft, Ticket as TicketIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import Button from '@/components/ui/Button';
 
 export default function DigitalTicket() {
   const [user, setUser] = useState(null);
@@ -15,6 +16,35 @@ export default function DigitalTicket() {
   const [scanLoading, setScanLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  const [countdown, setCountdown] = useState('');
+
+  useEffect(() => {
+    if (!ticket || ticket.status !== 'RESERVED') {
+      setCountdown('');
+      return;
+    }
+
+    const expiryTime = new Date(ticket.created_at).getTime() + 10 * 60 * 1000;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = expiryTime - now;
+
+      if (diff <= 0) {
+        setCountdown('00:00');
+        clearInterval(interval);
+        // Expire the ticket in the local UI state
+        setTicket(null);
+      } else {
+        const minutes = Math.floor(diff / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdown(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [ticket]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,7 +108,8 @@ export default function DigitalTicket() {
 
       setTicket(prev => ({ 
         ...prev, 
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        entry_time: new Date().toISOString()
       }));
       
     } catch (err) {
@@ -218,7 +249,7 @@ export default function DigitalTicket() {
                   ) : ticket.status === 'RESERVED' ? (
                     <span className="flex items-center text-sm font-semibold text-yellow-600 bg-yellow-50 dark:bg-brand-gold-950/40 dark:text-brand-gold-400 px-2 py-1 rounded-md">
                       <span className="w-2 h-2 rounded-full bg-yellow-500 dark:bg-brand-gold-500 mr-2 animate-pulse"></span>
-                      Reserved
+                      Expires in: {countdown || '10:00'}
                     </span>
                   ) : (
                     <span className="flex items-center text-sm font-semibold text-gray-600 bg-gray-100 dark:bg-zinc-800 dark:text-zinc-400 px-2 py-1 rounded-md">
@@ -247,12 +278,21 @@ export default function DigitalTicket() {
               <div className="flex items-center p-3 bg-gray-50 dark:bg-zinc-950/50 rounded-xl">
                 <Clock className="w-5 h-5 text-brand-maroon-800 dark:text-brand-maroon-500 mr-3" />
                 <div className="flex-1 flex justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400">Entry Time</p>
-                    <p className="text-sm font-semibold dark:text-gray-200">
-                      {formatTime(ticket.entry_time)} <span className="text-xs font-normal text-gray-500 dark:text-zinc-500 ml-1">{formatDate(ticket.entry_time)}</span>
-                    </p>
-                  </div>
+                  {ticket.status === 'RESERVED' ? (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">Reserved At</p>
+                      <p className="text-sm font-semibold dark:text-gray-200">
+                        {formatTime(ticket.created_at)} <span className="text-xs font-normal text-gray-500 dark:text-zinc-500 ml-1">{formatDate(ticket.created_at)}</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">Entry Time (Occupied)</p>
+                      <p className="text-sm font-semibold dark:text-gray-200">
+                        {formatTime(ticket.entry_time)} <span className="text-xs font-normal text-gray-500 dark:text-zinc-500 ml-1">{formatDate(ticket.entry_time)}</span>
+                      </p>
+                    </div>
+                  )}
                   {ticket.exit_time && (
                     <div className="text-right border-l border-gray-200 dark:border-zinc-700 pl-4">
                       <p className="text-xs text-gray-500 dark:text-zinc-400">Exit Time</p>
@@ -297,46 +337,25 @@ export default function DigitalTicket() {
 
         {/* Simulate Scan Button */}
         {ticket.status === 'RESERVED' && (
-          <button
+          <Button
             onClick={handleSimulateScan}
-            disabled={scanLoading}
-            className={`w-full mt-6 py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 flex justify-center items-center
-              ${scanLoading 
-                ? 'bg-blue-600/70 text-white cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl active:scale-[0.98]'
-              }`}
+            isLoading={scanLoading}
+            className="w-full mt-6 py-4 text-lg shadow-lg !bg-blue-600 hover:!bg-blue-700 text-white"
           >
-            {scanLoading ? (
-              <span className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                Processing...
-              </span>
-            ) : (
-              'Simulate Gate Scan'
-            )}
-          </button>
+            Simulate Gate Scan
+          </Button>
         )}
 
         {/* Checkout Button */}
         {(ticket.status === 'ACTIVE' || ticket.status === 'RESERVED') && (
-          <button
+          <Button
             onClick={handleCheckout}
-            disabled={checkoutLoading}
-            className={`w-full mt-6 py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 flex justify-center items-center
-              ${checkoutLoading 
-                ? 'bg-brand-maroon-800/70 text-white cursor-not-allowed' 
-                : 'bg-brand-maroon-800 text-white hover:bg-brand-maroon-900 hover:shadow-xl active:scale-[0.98]'
-              }`}
+            isLoading={checkoutLoading}
+            variant="primary"
+            className="w-full mt-6 py-4 text-lg shadow-lg"
           >
-            {checkoutLoading ? (
-              <span className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                Processing...
-              </span>
-            ) : (
-              'Complete Parking & Checkout'
-            )}
-          </button>
+            Complete Parking & Checkout
+          </Button>
         )}
       </main>
       )}

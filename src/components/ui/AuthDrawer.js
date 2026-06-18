@@ -11,6 +11,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +30,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       setShowSignupOtpInput(false);
       setSignupEmail('');
       setOtpCode('');
+      setIsGuestLoading(false);
     }
   }, [isOpen, initialMode]);
 
@@ -142,7 +144,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       if (isSignUp) {
         setSignupEmail(form.email);
         setShowSignupOtpInput(true);
-        setSuccess('Account created! A 6-digit verification code has been sent to your email (including your spam folder). Please enter it below to confirm.');
+        setSuccess('Account created! An 8-digit verification code has been sent to your email (including your spam folder). Please enter it below to confirm.');
         setForm({ ...form, full_name: '', pup_id: '', password: '', confirm_password: '' });
       } else {
         router.push('/dashboard');
@@ -152,6 +154,35 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleGuestLogin() {
+    setIsGuestLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch('/api/auth/anonymous-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to log in as guest.');
+        return;
+      }
+
+      setSuccess('Logged in as Guest Visitor! Redirecting...');
+      setTimeout(() => {
+        router.push('/dashboard');
+        onClose();
+      }, 1000);
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsGuestLoading(false);
     }
   }
 
@@ -190,7 +221,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
               {showSignupOtpInput
-                ? `Enter the 6-digit code sent to ${signupEmail}`
+                ? `Enter the 8-digit code sent to ${signupEmail}`
                 : isForgotPassword
                 ? 'Enter your email to receive a reset link'
                 : isSignUp
@@ -432,10 +463,33 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
               variant="primary"
               size="lg"
               isLoading={isLoading}
+              disabled={isGuestLoading}
               className="w-full mt-2"
             >
               {isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'}
             </Button>
+
+            {!isForgotPassword && (
+              <>
+                <div className="relative flex py-4 items-center">
+                  <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
+                  <span className="flex-shrink mx-4 text-xs font-semibold text-zinc-400 uppercase tracking-widest">Or</span>
+                  <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  isLoading={isGuestLoading}
+                  disabled={isLoading}
+                  onClick={handleGuestLogin}
+                  className="w-full border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
+                >
+                  Continue as Visitor
+                </Button>
+              </>
+            )}
           </form>
           )}
 
