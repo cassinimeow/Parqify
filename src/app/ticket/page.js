@@ -251,10 +251,17 @@ export default function DigitalTicket() {
                       <span className="w-2 h-2 rounded-full bg-yellow-500 dark:bg-brand-gold-500 mr-2 animate-pulse"></span>
                       Expires in: {countdown || '10:00'}
                     </span>
+                  ) : ticket.status === 'OVERRIDDEN' ? (
+                    <span className="flex items-center text-[10px] font-bold text-purple-700 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-1 rounded-md uppercase tracking-wider">
+                      <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Overridden by Super Admin
+                    </span>
                   ) : (
                     <span className="flex items-center text-sm font-semibold text-gray-600 bg-gray-100 dark:bg-zinc-800 dark:text-zinc-400 px-2 py-1 rounded-md">
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      Completed
+                      {ticket.status === 'EXPIRED' ? 'Expired' : 'Completed'}
                     </span>
                   )}
                 </div>
@@ -289,13 +296,15 @@ export default function DigitalTicket() {
                     <div>
                       <p className="text-xs text-gray-500 dark:text-zinc-400">Entry Time (Occupied)</p>
                       <p className="text-sm font-semibold dark:text-gray-200">
-                        {formatTime(ticket.entry_time)} <span className="text-xs font-normal text-gray-500 dark:text-zinc-500 ml-1">{formatDate(ticket.entry_time)}</span>
+                        {formatTime(ticket.entry_time) || '--:--'} <span className="text-xs font-normal text-gray-500 dark:text-zinc-500 ml-1">{formatDate(ticket.entry_time)}</span>
                       </p>
                     </div>
                   )}
                   {ticket.exit_time && (
                     <div className="text-right border-l border-gray-200 dark:border-zinc-700 pl-4">
-                      <p className="text-xs text-gray-500 dark:text-zinc-400">Exit Time</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400">
+                        {ticket.status === 'EXPIRED' ? 'Expired At' : ticket.status === 'OVERRIDDEN' ? 'Cancelled At' : 'Exit Time'}
+                      </p>
                       <p className="text-sm font-semibold dark:text-gray-200">
                         {formatTime(ticket.exit_time)}
                       </p>

@@ -107,7 +107,7 @@ export async function PUT(request) {
       // If the admin forcefully occupies a slot, any RESERVED ticket on it should become ACTIVE
       await supabase
         .from('tickets')
-        .update({ status: 'ACTIVE' })
+        .update({ status: 'ACTIVE', entry_time: new Date().toISOString() })
         .eq('slot_id', id)
         .eq('status', 'RESERVED');
     } else if (status === 'RESERVED') {

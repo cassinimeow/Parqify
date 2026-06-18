@@ -42,6 +42,7 @@ export default function SettingsPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpCode, setOtpCode] = useState('');
 
@@ -144,12 +145,12 @@ export default function SettingsPage() {
       }
 
       const updates = {};
-      if (email !== user.email) updates.email = email;
-      if (password) {
-        if (!currentPassword) {
-          setSecurityMessage({ type: 'error', text: 'Current password is required to update to a new password.' });
-          setIsSavingSecurity(false);
-          return;
+      if (email !== user.email && !isChangingPassword) updates.email = email;
+      if (isChangingPassword) {
+        if (!currentPassword || !password || !confirmPassword) {
+            setSecurityMessage({ type: 'error', text: 'All password fields are required.' });
+            setIsSavingSecurity(false);
+            return;
         }
         updates.password = password;
         updates.currentPassword = currentPassword;
@@ -162,7 +163,7 @@ export default function SettingsPage() {
       }
 
       // If we are changing password and haven't sent the OTP yet, send it now.
-      if (password && !showOtpInput) {
+      if (isChangingPassword && !showOtpInput) {
         const reauthRes = await fetch('/api/auth/reauthenticate', { method: 'POST' });
         const reauthData = await reauthRes.json();
         if (!reauthRes.ok) throw new Error(reauthData.error || 'Failed to send OTP.');
@@ -196,6 +197,7 @@ export default function SettingsPage() {
       setPassword(''); // Clear password field
       setConfirmPassword(''); // Clear confirm password field
       setCurrentPassword(''); // Clear current password field
+      setIsChangingPassword(false);
       setShowOtpInput(false);
       setOtpCode('');
     } catch (err) {
@@ -350,70 +352,125 @@ export default function SettingsPage() {
                 disabled={isGuest}
                 required
               />
-              {password && (
-                <Input
-                  id="current_password"
-                  type="password"
-                  label="Current Password"
-                  placeholder="Enter your current password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  disabled={isGuest}
-                  required={!!password}
-                />
-              )}
-              <Input
-                id="password"
-                type="password"
-                label="New Password"
-                placeholder={isGuest ? "Unavailable for guest account" : "Leave blank to keep current password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isGuest}
-                helperText={isGuest ? undefined : "Must be at least 6 characters."}
-              />
-              {password && (
-                <Input
-                  id="confirm_password"
-                  type="password"
-                  label="Confirm New Password"
-                  placeholder="Re-type your new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={isGuest}
-                  required={!!password}
-                />
-              )}
+              {!isChangingPassword ? (
+                <>
+                  {!isGuest && (
+                    <div className="flex justify-start">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsChangingPassword(true);
+                          setSecurityMessage({ type: '', text: '' });
+                        }}
+                      >
+                        Change Password
+                      </Button>
+                    </div>
+                  )}
 
-              {showOtpInput && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  {securityMessage.text && (
+                    <div className={`p-3 rounded-lg text-sm ${securityMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                      {securityMessage.text}
+                    </div>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    variant="default" 
+                    isLoading={isSavingSecurity} 
+                    disabled={isGuest || !(user && email !== (user.email || ''))}
+                  >
+                    Update Email
+                  </Button>
+                </>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-4 pt-4 border-t border-gray-100 dark:border-zinc-800">
                   <Input
-                    id="otpCode"
-                    type="text"
-                    label="Verification Code (OTP)"
-                    placeholder="Enter verification code"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    maxLength={8}
+                    id="current_password"
+                    type="password"
+                    label="Current Password"
+                    placeholder="Enter your current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    disabled={isGuest || showOtpInput}
                     required
-                    icon={
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                      </svg>
-                    }
                   />
+                  <Input
+                    id="password"
+                    type="password"
+                    label="New Password"
+                    placeholder="Enter your new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isGuest || showOtpInput}
+                    helperText="Must be at least 6 characters."
+                    required
+                  />
+                  <Input
+                    id="confirm_password"
+                    type="password"
+                    label="Confirm New Password"
+                    placeholder="Re-type your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isGuest || showOtpInput}
+                    required
+                  />
+
+                  {showOtpInput && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300 pt-2 border-t border-gray-100 dark:border-zinc-800">
+                      <Input
+                        id="otpCode"
+                        type="text"
+                        label="Verification Code (OTP)"
+                        placeholder="Enter verification code"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        maxLength={8}
+                        required
+                        icon={
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                          </svg>
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {securityMessage.text && (
+                    <div className={`p-3 rounded-lg text-sm ${securityMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                      {securityMessage.text}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      type="submit" 
+                      variant="default" 
+                      isLoading={isSavingSecurity} 
+                      disabled={isGuest || !currentPassword || !password || !confirmPassword}
+                    >
+                      {showOtpInput ? 'Verify and Save Password' : 'Send Verification Code'}
+                    </Button>
+                    {!showOtpInput && (
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => {
+                          setIsChangingPassword(false);
+                          setPassword('');
+                          setConfirmPassword('');
+                          setCurrentPassword('');
+                          setSecurityMessage({ type: '', text: '' });
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
-
-              {securityMessage.text && (
-                <div className={`p-3 rounded-lg text-sm ${securityMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                  {securityMessage.text}
-                </div>
-              )}
-
-              <Button type="submit" variant="outline" isLoading={isSavingSecurity} disabled={isGuest || !(user && (email !== (user.email || '') || password !== ''))}>
-                {showOtpInput ? 'Verify and Save' : 'Update Security Settings'}
-              </Button>
             </form>
           </CardContent>
         </Card>
