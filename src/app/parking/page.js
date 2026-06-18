@@ -674,7 +674,7 @@ export default function ParkingPage() {
               </div>
               <div className="flex justify-between">
                 <span>Entry Timestamp:</span>
-                <span>{new Date(successTicket.entryTime).toLocaleString()}</span>
+                <span>{successTicket.entryTime ? new Date(successTicket.entryTime).toLocaleString() : 'Pending Entry Scan'}</span>
               </div>
             </div>
 

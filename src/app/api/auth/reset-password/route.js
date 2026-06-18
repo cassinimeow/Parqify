@@ -3,7 +3,7 @@ import { getSupabase } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
-    const { email } = await request.json();
+    const { email, captchaToken } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -17,6 +17,9 @@ export async function POST(request) {
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
+      options: {
+        captchaToken,
+      },
     });
 
     if (error) {

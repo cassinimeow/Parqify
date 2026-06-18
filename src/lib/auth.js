@@ -8,6 +8,12 @@ import { getSupabase } from './supabase';
 export async function registerUser({ email, password, fullName, pupId, captchaToken }) {
   const supabase = await getSupabase();
 
+  // Step -1: Call DB cleaner to wipe old unconfirmed accounts matching email or PUP ID
+  await supabase.rpc('check_and_delete_unconfirmed_user', { 
+    email_to_check: email, 
+    pup_id_to_check: pupId 
+  });
+
   // Step 0: Check if email or pup_id already exists in public.users to prevent ghost auth accounts
   const { data: existingUsers } = await supabase
     .from('users')
