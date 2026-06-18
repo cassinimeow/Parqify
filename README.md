@@ -4,34 +4,37 @@ Parqify is a modern, real-time web application built for the PUP Community to in
 
 ![Parqify Cover](/public/parqify.png)
 
-## 📸 System Screenshots
+## 📸 System Demos & Screenshots
 
-|                 User Dashboard                  |                Interactive Parking Lot                 |
-| :---------------------------------------------: | :----------------------------------------------------: |
-| ![Dashboard](/public/screenshots/dashboard.png) | ![Parking Lot](/public/screenshots/parkinglotpage.png) |
+|                     Landing Page                      |                    User Dashboard                     |
+| :---------------------------------------------------: | :---------------------------------------------------: |
+|   ![Landing Page](/public/screenshots/landingpage.gif)   |   ![User Dashboard](/public/screenshots/dashboard.gif)   |
 
-|                 Digital Ticket Confirmation                 |              Active Ticket Page               |
-| :---------------------------------------------------------: | :-------------------------------------------: |
-| ![Confirmation](/public/screenshots/ticketconfrimation.png) | ![Ticket](/public/screenshots/ticketpage.png) |
+|                Interactive Parking Lot                |                  Active Ticket Page                   |
+| :---------------------------------------------------: | :---------------------------------------------------: |
+|  ![Parking Lot](/public/screenshots/parkinglot.gif)   |  ![Active Ticket](/public/screenshots/ticketpage.gif)  |
 
-|                     Admin Console                      |
-| :----------------------------------------------------: |
-| ![Admin Console](/public/screenshots/adminconsole.png) |
+|                     Admin Console                     |
+| :---------------------------------------------------: |
+| ![Admin Console](/public/screenshots/adminconsole.gif) |
 
 ## ✨ Features
 
-- **Secure Authentication:** JWT and cookie-based Auth using Next.js SSR and Supabase.
-- **Interactive Parking Selection:** A beautiful visual grid map of the campus parking lot showing real-time slot availability.
-- **Digital Ticketing:** Automatically generated QR code tickets for entry and checkout.
+- **Secure Authentication:** JWT and cookie-based Auth using Next.js SSR, Supabase, and **hCaptcha** bot protection for logins, registrations, and password resets.
+- **Interactive Parking Selection:** A beautiful visual grid map of the campus parking lot showing real-time slot availability and **Reservation Timestamps**.
+- **Admin Space Management:** An admin panel allowing authorized admins to add, update, and delete parking lots and slots, secured by Postgres Row Level Security (RLS).
+- **Digital Ticketing:** Automatically generated QR code tickets for entry and checkout with dynamic checkout states (such as "Overridden by Super Admin").
+- **Robust Signup Flow:** Input validation for full names (supporting Filipino characters like `ñ`/`Ñ`) and PUP IDs, with automatic cleanup of unconfirmed/stale registrations to allow page refresh retries.
 - **Dashboard & Analytics:** Personal dashboards for users, integrated with Vercel Analytics for usage metrics.
 - **Parqibot Assistant:** A floating interactive Chatbot to help users with common questions.
-- **Premium Design System:** Uses PUP's official Maroon and Gold branding with smooth micro-animations.
+- **Premium Design System:** Uses PUP's official Maroon and Gold branding with smooth micro-animations and dark mode support.
 
 ## 🛠️ Technology Stack
 
 - **Framework:** [Next.js 14 App Router](https://nextjs.org/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Database & Auth:** [Supabase](https://supabase.com/)
+- **Database & Auth:** [Supabase](https://supabase.com/) with Postgres Row Level Security (RLS)
+- **Security:** [hCaptcha](https://www.hcaptcha.com/) integration
 - **Icons:** [Lucide React](https://lucide.dev/)
 - **Analytics:** [Vercel Analytics](https://vercel.com/analytics)
 - **Deployment:** Vercel
