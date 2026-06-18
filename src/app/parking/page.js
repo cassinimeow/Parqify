@@ -190,7 +190,7 @@ export default function ParkingPage() {
         id: data.ticket.id,
         slotName: selectedSlot.slot_name,
         lotName: selectedLot.name,
-        entryTime: data.ticket.entry_time,
+        reservationTime: data.ticket.created_at || new Date().toISOString(),
         pupId: profile?.pup_id || 'N/A'
       });
       setActiveTicket(data.ticket);
@@ -673,8 +673,8 @@ export default function ParkingPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Entry Timestamp:</span>
-                <span>{successTicket.entryTime ? new Date(successTicket.entryTime).toLocaleString() : 'Pending Entry Scan'}</span>
+                <span>Reservation Timestamp:</span>
+                <span>{new Date(successTicket.reservationTime).toLocaleString()}</span>
               </div>
             </div>
 
