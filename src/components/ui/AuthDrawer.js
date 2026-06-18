@@ -494,17 +494,23 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
             )}
 
             {/* hCaptcha Verification */}
-            <div className="flex justify-center my-4 min-h-[78px]">
-              <HCaptcha
-                ref={captchaRef}
-                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-                onVerify={(token) => {
-                  setCaptchaToken(token);
-                  setError('');
-                }}
-                onExpire={() => setCaptchaToken(null)}
-              />
-            </div>
+            {process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ? (
+              <div className="flex justify-center my-4 min-h-[78px]">
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                  onVerify={(token) => {
+                    setCaptchaToken(token);
+                    setError('');
+                  }}
+                  onExpire={() => setCaptchaToken(null)}
+                />
+              </div>
+            ) : (
+              <div className="text-center text-xs text-red-500 my-4">
+                Error: hCaptcha Site Key is not configured in environment variables.
+              </div>
+            )}
 
             <Button
               type="submit"
