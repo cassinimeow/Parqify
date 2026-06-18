@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Code } from 'lucide-react';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
@@ -19,6 +20,8 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   const [showSignupOtpInput, setShowSignupOtpInput] = useState(false);
   const [signupEmail, setSignupEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
 
   // Sync mode when reopened
   useEffect(() => {
@@ -31,8 +34,20 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       setSignupEmail('');
       setOtpCode('');
       setIsGuestLoading(false);
+      setCaptchaToken(null);
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+      }
     }
   }, [isOpen, initialMode]);
+
+  // Reset captcha token when tabs toggle
+  useEffect(() => {
+    setCaptchaToken(null);
+    if (captchaRef.current) {
+      captchaRef.current.resetCaptcha();
+    }
+  }, [isSignUp, isForgotPassword]);
 
   const [form, setForm] = useState({
     full_name: '',
@@ -102,15 +117,26 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
     setError('');
     setSuccess('');
 
+    if (!captchaToken) {
+      setError('Please complete the Captcha verification.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       if (isForgotPassword) {
         const res = await fetch('/api/auth/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email }),
+          body: JSON.stringify({ email: form.email, captchaToken }),
         });
         const data = await res.json();
-        if (!res.ok) { setError(data.error || 'Something went wrong'); return; }
+        if (!res.ok) { 
+          setError(data.error || 'Something went wrong'); 
+          if (captchaRef.current) captchaRef.current.resetCaptcha();
+          setCaptchaToken(null);
+          return; 
+        }
         setSuccess('Password reset link sent! Please check your email (including your spam folder).');
         setIsForgotPassword(false);
         setIsLoading(false);
@@ -125,8 +151,8 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
 
       const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
       const body = isSignUp
-        ? { email: form.email, password: form.password, full_name: form.full_name, pup_id: form.pup_id }
-        : { email: form.email, password: form.password };
+        ? { email: form.email, password: form.password, full_name: form.full_name, pup_id: form.pup_id, captchaToken }
+        : { email: form.email, password: form.password, captchaToken };
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -138,6 +164,8 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
 
       if (!res.ok) {
         setError(data.error || 'Something went wrong');
+        if (captchaRef.current) captchaRef.current.resetCaptcha();
+        setCaptchaToken(null);
         return;
       }
 
@@ -158,19 +186,26 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   }
 
   async function handleGuestLogin() {
+    if (!captchaToken) {
+      setError('Please complete the Captcha verification first to continue as visitor.');
+      return;
+    }
     setIsGuestLoading(true);
     setError('');
     setSuccess('');
     try {
       const res = await fetch('/api/auth/anonymous-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ captchaToken })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Failed to log in as guest.');
+        if (captchaRef.current) captchaRef.current.resetCaptcha();
+        setCaptchaToken(null);
         return;
       }
 
@@ -457,6 +492,19 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
                 </button>
               </div>
             )}
+
+            {/* hCaptcha Verification */}
+            <div className="flex justify-center my-4 min-h-[78px]">
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                onVerify={(token) => {
+                  setCaptchaToken(token);
+                  setError('');
+                }}
+                onExpire={() => setCaptchaToken(null)}
+              />
+            </div>
 
             <Button
               type="submit"

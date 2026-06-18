@@ -41,6 +41,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpCode, setOtpCode] = useState('');
 
@@ -144,7 +145,15 @@ export default function SettingsPage() {
 
       const updates = {};
       if (email !== user.email) updates.email = email;
-      if (password) updates.password = password;
+      if (password) {
+        if (!currentPassword) {
+          setSecurityMessage({ type: 'error', text: 'Current password is required to update to a new password.' });
+          setIsSavingSecurity(false);
+          return;
+        }
+        updates.password = password;
+        updates.currentPassword = currentPassword;
+      }
 
       if (Object.keys(updates).length === 0) {
         setSecurityMessage({ type: 'error', text: 'No changes made.' });
@@ -186,6 +195,7 @@ export default function SettingsPage() {
       setSecurityMessage({ type: 'success', text: data.message });
       setPassword(''); // Clear password field
       setConfirmPassword(''); // Clear confirm password field
+      setCurrentPassword(''); // Clear current password field
       setShowOtpInput(false);
       setOtpCode('');
     } catch (err) {
@@ -340,6 +350,18 @@ export default function SettingsPage() {
                 disabled={isGuest}
                 required
               />
+              {password && (
+                <Input
+                  id="current_password"
+                  type="password"
+                  label="Current Password"
+                  placeholder="Enter your current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  disabled={isGuest}
+                  required={!!password}
+                />
+              )}
               <Input
                 id="password"
                 type="password"

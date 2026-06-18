@@ -5,7 +5,7 @@ import { getSupabase } from './supabase';
  * @param {{ email: string, password: string, fullName: string, pupId: string }} params
  * @returns {{ user: object, session: object } | { error: string }}
  */
-export async function registerUser({ email, password, fullName, pupId }) {
+export async function registerUser({ email, password, fullName, pupId, captchaToken }) {
   const supabase = await getSupabase();
 
   // Step 0: Check if email or pup_id already exists in public.users to prevent ghost auth accounts
@@ -31,6 +31,7 @@ export async function registerUser({ email, password, fullName, pupId }) {
     email,
     password,
     options: {
+      captchaToken,
       data: {
         full_name: fullName,
         pup_id: pupId,
@@ -65,7 +66,7 @@ export async function registerUser({ email, password, fullName, pupId }) {
  * @param {{ email: string, password: string }} params
  * @returns {{ user: object, session: object } | { error: string }}
  */
-export async function loginUser({ email, password }) {
+export async function loginUser({ email, password, captchaToken }) {
   const supabase = await getSupabase();
 
   // Step 1: Check if the user exists in our public schema to provide better error messages
@@ -83,6 +84,7 @@ export async function loginUser({ email, password }) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken },
   });
 
   if (error) {

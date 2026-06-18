@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/auth';
  */
 export async function POST(request) {
   try {
-    const { email, password, nonce } = await request.json();
+    const { email, password, nonce, currentPassword } = await request.json();
 
     const { user, error: authError } = await getCurrentUser();
     
@@ -28,7 +28,12 @@ export async function POST(request) {
       return NextResponse.json({ message: 'No changes provided' });
     }
 
-    const { data, error } = await supabase.auth.updateUser(updates);
+    const updateOptions = {};
+    if (password && currentPassword) {
+      updateOptions.options = { password: currentPassword };
+    }
+
+    const { data, error } = await supabase.auth.updateUser(updates, updateOptions);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

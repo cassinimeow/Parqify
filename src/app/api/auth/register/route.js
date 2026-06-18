@@ -3,12 +3,12 @@ import { registerUser } from '@/lib/auth';
 
 /**
  * POST /api/auth/register
- * Body: { email, password, full_name, pup_id }
+ * Body: { email, password, full_name, pup_id, captchaToken }
  */
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, full_name, pup_id } = body;
+    const { email, password, full_name, pup_id, captchaToken } = body;
 
     // Validate required fields
     if (!email || !password || !full_name || !pup_id) {
@@ -40,6 +40,7 @@ export async function POST(request) {
       password,
       fullName: full_name,
       pupId: pup_id,
+      captchaToken,
     });
 
     if (result.error) {

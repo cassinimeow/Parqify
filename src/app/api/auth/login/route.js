@@ -8,7 +8,7 @@ import { loginUser } from '@/lib/auth';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, captchaToken } = body;
 
     // Validate required fields
     if (!email || !password) {
@@ -18,7 +18,7 @@ export async function POST(request) {
       );
     }
 
-    const result = await loginUser({ email, password });
+    const result = await loginUser({ email, password, captchaToken });
 
     if (result.error) {
       return NextResponse.json(

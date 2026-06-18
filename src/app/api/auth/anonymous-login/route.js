@@ -1,16 +1,46 @@
 import { NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { isRateLimited } from '@/lib/rate-limit';
 
 /**
  * POST /api/auth/anonymous-login
  * Signs in a guest user anonymously and registers their unique profile in public.users.
  */
-export async function POST() {
+export async function POST(request) {
   try {
+    // 1. Apply rate limit check (Max 5 requests per 15 minutes per IP)
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               '127.0.0.1';
+               
+    const { limited, resetTime } = isRateLimited(ip, 5, 15 * 60 * 1000);
+    if (limited) {
+      const retryAfter = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: 'Too many visitor sessions requested from this IP. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': retryAfter.toString()
+          }
+        }
+      );
+    }
+
+    let captchaToken = null;
+    try {
+      const body = await request.json();
+      captchaToken = body?.captchaToken;
+    } catch (e) {
+      // Ignore if body is empty
+    }
+
     const supabase = await getSupabase();
 
-    // 1. Sign in anonymously with Supabase Auth
-    const { data, error } = await supabase.auth.signInAnonymously();
+    // 2. Sign in anonymously with Supabase Auth (passing captchaToken if configured)
+    const { data, error } = await supabase.auth.signInAnonymously({
+      options: { captchaToken }
+    });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -18,7 +48,7 @@ export async function POST() {
 
     const user = data.user;
 
-    // 2. Check if a profile already exists for this anonymous user (precautionary)
+    // 3. Check if a profile already exists for this anonymous user (precautionary)
     const { data: existingProfile } = await supabase
       .from('users')
       .select('id')
