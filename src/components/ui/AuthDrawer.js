@@ -74,6 +74,8 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
     let { name, value } = e.target;
     if (name === 'pup_id') {
       value = formatPUPID(value);
+    } else if (name === 'full_name') {
+      value = value.replace(/[^a-zA-ZñÑ\s.\-]/g, '');
     }
     setForm({ ...form, [name]: value });
     setError('');
@@ -370,7 +372,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
                 <Input
                   id="pup_id"
                   name="pup_id"
-                  label="PUP ITECH ID Number"
+                  label="PUP ID Number"
                   placeholder="2024-00001-MN-0"
                   value={form.pup_id}
                   onChange={handleChange}

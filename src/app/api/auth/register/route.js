@@ -35,6 +35,24 @@ export async function POST(request) {
       );
     }
 
+    // Validate full name format (only letters, spaces, dots, hyphens, and Filipino letters ñ/Ñ)
+    const nameRegex = /^[a-zA-ZñÑ\s.\-]+$/;
+    if (!nameRegex.test(full_name)) {
+      return NextResponse.json(
+        { error: 'Full name cannot contain numbers or special characters' },
+        { status: 400 }
+      );
+    }
+
+    // Validate PUP ID format (only alphanumeric and hyphens)
+    const pupIdRegex = /^[a-zA-Z0-9\-]+$/;
+    if (!pupIdRegex.test(pup_id)) {
+      return NextResponse.json(
+        { error: 'PUP ID can only contain letters, numbers, and hyphens' },
+        { status: 400 }
+      );
+    }
+
     const result = await registerUser({
       email,
       password,

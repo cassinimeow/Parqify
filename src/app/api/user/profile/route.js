@@ -45,6 +45,17 @@ export async function POST(request) {
       }
     }
 
+    if (full_name !== undefined) {
+      // Validate full name format (only letters, spaces, dots, hyphens, and Filipino letters ñ/Ñ)
+      const nameRegex = /^[a-zA-ZñÑ\s.\-]+$/;
+      if (!nameRegex.test(full_name)) {
+        return NextResponse.json(
+          { error: 'Full name cannot contain numbers or special characters' },
+          { status: 400 }
+        );
+      }
+    }
+
     const updates = {};
     if (full_name !== undefined) updates.full_name = full_name;
     if (finalAvatarUrl !== undefined) updates.avatar_url = finalAvatarUrl;

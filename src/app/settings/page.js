@@ -319,7 +319,7 @@ export default function SettingsPage() {
                 id="full_name"
                 label="Full Name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => setFullName(e.target.value.replace(/[^a-zA-ZñÑ\s.\-]/g, ''))}
                 disabled={isGuest}
                 required
               />
