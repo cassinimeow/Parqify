@@ -409,6 +409,7 @@ export default function DashboardPage() {
                             ticket.status === 'ACTIVE' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
                             ticket.status === 'RESERVED' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
                             ticket.status === 'EXPIRED' ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                            ticket.status === 'OVERRIDDEN' ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' :
                             'bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
                           }`}>
                             {ticket.status === 'ACTIVE' ? (
@@ -423,6 +424,10 @@ export default function DashboardPage() {
                             ) : ticket.status === 'EXPIRED' ? (
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                              </svg>
+                            ) : ticket.status === 'OVERRIDDEN' ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                               </svg>
                             ) : (
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -444,9 +449,10 @@ export default function DashboardPage() {
                             ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                             ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
                             ticket.status === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            ticket.status === 'OVERRIDDEN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                             'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
                           }`}>
-                            {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status}
+                            {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status === 'OVERRIDDEN' ? 'OVERRIDDEN BY ADMIN' : ticket.status}
                           </span>
                           <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
                             <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -480,13 +486,15 @@ export default function DashboardPage() {
                             </div>
                             <div>
                               <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">
-                                {ticket.status === 'EXPIRED' ? 'Expired At' : 'Exit Time'}
+                                {ticket.status === 'EXPIRED' ? 'Expired At' : ticket.status === 'OVERRIDDEN' ? 'Overridden At' : 'Exit Time'}
                               </p>
                               <p className="font-semibold text-gray-700 dark:text-gray-300">
                                 {ticket.exit_time 
                                   ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
                                   : ticket.status === 'EXPIRED'
                                   ? 'Timed Out'
+                                  : ticket.status === 'OVERRIDDEN'
+                                  ? 'Cancelled'
                                   : 'Active Session'}
                               </p>
                             </div>
@@ -543,6 +551,7 @@ export default function DashboardPage() {
                         ticket.status === 'ACTIVE' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
                         ticket.status === 'RESERVED' ? 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
                         ticket.status === 'EXPIRED' ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                        ticket.status === 'OVERRIDDEN' ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' :
                         'bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400'
                       }`}>
                         {ticket.status === 'ACTIVE' ? (
@@ -552,6 +561,10 @@ export default function DashboardPage() {
                         ) : ticket.status === 'EXPIRED' ? (
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                          </svg>
+                        ) : ticket.status === 'OVERRIDDEN' ? (
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                           </svg>
                         ) : (
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -571,9 +584,10 @@ export default function DashboardPage() {
                         ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                         ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
                         ticket.status === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                        ticket.status === 'OVERRIDDEN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                         'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
                       }`}>
-                        {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status}
+                        {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status === 'OVERRIDDEN' ? 'OVERRIDDEN BY ADMIN' : ticket.status}
                       </span>
                       <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
                         <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedModalTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -607,13 +621,15 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">
-                            {ticket.status === 'EXPIRED' ? 'Expired At' : 'Exit Time'}
+                            {ticket.status === 'EXPIRED' ? 'Expired At' : ticket.status === 'OVERRIDDEN' ? 'Overridden At' : 'Exit Time'}
                           </p>
                           <p className="font-semibold text-gray-700 dark:text-gray-300">
                             {ticket.exit_time 
                               ? new Date(ticket.exit_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
                               : ticket.status === 'EXPIRED'
                               ? 'Timed Out'
+                              : ticket.status === 'OVERRIDDEN'
+                              ? 'Cancelled'
                               : 'Active Session'}
                           </p>
                         </div>

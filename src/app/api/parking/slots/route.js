@@ -100,7 +100,7 @@ export async function PUT(request) {
     if (status === 'AVAILABLE') {
       await supabase
         .from('tickets')
-        .update({ status: 'COMPLETED', exit_time: new Date().toISOString() })
+        .update({ status: 'OVERRIDDEN', exit_time: new Date().toISOString() })
         .eq('slot_id', id)
         .in('status', ['ACTIVE', 'RESERVED']);
     } else if (status === 'OCCUPIED') {
