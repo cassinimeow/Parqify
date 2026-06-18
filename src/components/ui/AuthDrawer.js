@@ -290,8 +290,8 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
                 name="otpCode"
                 type="text"
                 label="Verification Code"
-                placeholder="123456"
-                maxLength={10}
+                placeholder="12345678"
+                maxLength={8}
                 value={otpCode}
                 onChange={(e) => {
                   setOtpCode(e.target.value.replace(/[^0-9]/g, ''));

@@ -176,8 +176,8 @@ export default function SettingsPage() {
       }
 
       if (showOtpInput) {
-        if (!otpCode || otpCode.trim().length < 6) {
-          setSecurityMessage({ type: 'error', text: 'Verification code must be at least 6 characters.' });
+        if (!otpCode || otpCode.trim().length < 8) {
+          setSecurityMessage({ type: 'error', text: 'Verification code must be at least 8 characters.' });
           setIsSavingSecurity(false);
           return;
         }
@@ -351,7 +351,7 @@ export default function SettingsPage() {
                 label="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isGuest}
+                disabled={isGuest || isChangingPassword}
                 required
               />
               {!isChangingPassword ? (
@@ -465,9 +465,9 @@ export default function SettingsPage() {
                         id="otpCode"
                         type="text"
                         label="Verification Code (OTP)"
-                        placeholder="Enter verification code"
+                        placeholder="12345678"
                         value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value)}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
                         maxLength={8}
                         required
                         icon={
