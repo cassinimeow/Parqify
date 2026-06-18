@@ -48,9 +48,7 @@ export async function updateSession(request) {
   if (session) {
     const supabaseCookies = request.cookies.getAll().filter(c => c.name.startsWith('sb-'));
     supabaseCookies.forEach(cookie => {
-      supabaseResponse.cookies.set({
-        name: cookie.name,
-        value: cookie.value,
+      supabaseResponse.cookies.set(cookie.name, cookie.value, {
         maxAge: 900,
         expires: new Date(Date.now() + 900 * 1000),
         path: '/',
