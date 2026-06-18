@@ -43,17 +43,8 @@ export async function registerUser({ email, password, fullName, pupId, captchaTo
     return { error: authError.message };
   }
 
-  // Step 2: Insert profile row into public.users linked to the auth user
-  const { error: profileError } = await supabase.from('users').insert({
-    id: authData.user.id, // Use the same UUID from Supabase Auth
-    full_name: fullName,
-    pup_id: pupId,
-    email: email,
-  });
-
-  if (profileError) {
-    return { error: profileError.message };
-  }
+  // Profile creation is now handled securely inside the database via a Postgres Trigger 
+  // (handle_new_user) listening to auth.users, which bypasses RLS issues.
 
   return {
     user: authData.user,
