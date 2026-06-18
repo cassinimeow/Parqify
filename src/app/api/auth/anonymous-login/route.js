@@ -48,38 +48,15 @@ export async function POST(request) {
 
     const user = data.user;
 
-    // 3. Check if a profile already exists for this anonymous user (precautionary)
-    const { data: existingProfile } = await supabase
+    // 3. Fetch the profile that was automatically created by the database trigger
+    const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('id')
+      .select('*')
       .eq('id', user.id)
-      .maybeSingle();
+      .single();
 
-    let profile = existingProfile;
-
-    if (!existingProfile) {
-      // Generate a unique PUP-ID style guest tag using the first 4 characters of their UUID
-      const guestSuffix = user.id.substring(0, 4).toUpperCase();
-      const guestPupId = `VISITOR-${guestSuffix}`;
-
-      // Insert profile row in public.users
-      const { data: newProfile, error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: user.id,
-          full_name: 'Guest Visitor',
-          pup_id: guestPupId,
-          email: null, // Anonymous users have no email
-        })
-        .select()
-        .single();
-
-      if (profileError) {
-        // If profile creation fails, we still return success but profile is null
-        console.error('Failed to create guest profile:', profileError);
-      } else {
-        profile = newProfile;
-      }
+    if (profileError) {
+      console.error('Failed to fetch auto-created guest profile:', profileError);
     }
 
     return NextResponse.json({
