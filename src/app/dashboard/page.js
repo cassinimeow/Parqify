@@ -452,7 +452,7 @@ export default function DashboardPage() {
                             ticket.status === 'OVERRIDDEN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                             'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
                           }`}>
-                            {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status === 'OVERRIDDEN' ? 'OVERRIDDEN BY ADMIN' : ticket.status}
+                            {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status === 'OVERRIDDEN' ? 'OVERRIDDEN BY SUPER ADMIN' : ticket.status}
                           </span>
                           <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
                             <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -587,7 +587,7 @@ export default function DashboardPage() {
                         ticket.status === 'OVERRIDDEN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                         'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
                       }`}>
-                        {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status === 'OVERRIDDEN' ? 'OVERRIDDEN BY ADMIN' : ticket.status}
+                        {ticket.status === 'EXPIRED' ? 'TICKET EXPIRED' : ticket.status === 'OVERRIDDEN' ? 'OVERRIDDEN BY SUPER ADMIN' : ticket.status}
                       </span>
                       <div className={`p-1 rounded-full transition-colors group-hover:bg-gray-200 dark:group-hover:bg-zinc-700`}>
                         <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedModalTicketId === ticket.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
