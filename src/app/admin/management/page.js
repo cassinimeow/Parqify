@@ -25,6 +25,7 @@ export default function AdminManagementPage() {
 
   // Search & Filter States
   const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [ticketSearch, setTicketSearch] = useState('');
   const [ticketStatusFilter, setTicketStatusFilter] = useState('ALL');
 
@@ -223,11 +224,25 @@ export default function AdminManagementPage() {
   // Filtering Logic
   const filteredUsers = users.filter(user => {
     const search = userSearch.toLowerCase();
-    return (
+    const matchesSearch = (
       (user.full_name || '').toLowerCase().includes(search) ||
       (user.email || '').toLowerCase().includes(search) ||
       (user.pup_id || '').toLowerCase().includes(search)
     );
+
+    const isGuest = user.pup_id?.startsWith('VISITOR-');
+    let matchesRole = true;
+    if (userRoleFilter === 'SUPER_ADMIN') {
+      matchesRole = user.is_super_admin && !isGuest;
+    } else if (userRoleFilter === 'ADMIN') {
+      matchesRole = user.is_admin && !user.is_super_admin && !isGuest;
+    } else if (userRoleFilter === 'USER') {
+      matchesRole = !user.is_admin && !user.is_super_admin && !isGuest;
+    } else if (userRoleFilter === 'GUEST') {
+      matchesRole = isGuest;
+    }
+
+    return matchesSearch && matchesRole;
   });
 
   const filteredTickets = tickets.filter(ticket => {
@@ -337,6 +352,7 @@ export default function AdminManagementPage() {
             font-size: 11px !important;
             margin: 0 !important;
             padding: 0 !important;
+            overflow: visible !important;
           }
 
           main {
@@ -344,6 +360,8 @@ export default function AdminManagementPage() {
             padding: 0 !important;
             max-width: 100% !important;
             width: 100% !important;
+            overflow: visible !important;
+            display: block !important;
           }
 
           /* Remove card styling that makes print ugly */
@@ -352,6 +370,8 @@ export default function AdminManagementPage() {
             box-shadow: none !important;
             border: none !important;
             background: transparent !important;
+            overflow: visible !important;
+            display: block !important;
           }
 
           .print-container {
@@ -362,6 +382,13 @@ export default function AdminManagementPage() {
             margin: 0 !important;
             max-width: 100% !important;
             width: 100% !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+
+          .overflow-x-auto {
+            overflow: visible !important;
+            display: block !important;
           }
 
           /* Table optimizations for printing */
@@ -369,6 +396,16 @@ export default function AdminManagementPage() {
             width: 100% !important;
             border-collapse: collapse !important;
             color: black !important;
+            page-break-inside: auto !important;
+          }
+
+          thead {
+            display: table-header-group !important;
+          }
+
+          tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
           }
 
           th {
@@ -386,11 +423,6 @@ export default function AdminManagementPage() {
             padding: 6px 12px !important;
             color: black !important;
             font-size: 10px !important;
-          }
-
-          /* Prevent table rows from splitting across pages */
-          tr {
-            page-break-inside: avoid !important;
           }
         }
       ` }} />
@@ -484,13 +516,13 @@ export default function AdminManagementPage() {
                 <div className="hidden print:block mb-6 border-b-2 border-brand-maroon-800 pb-3">
                   <h2 className="text-xl font-bold text-gray-900">Parqify - PUP Manila User Registry</h2>
                   <p className="text-gray-500 text-xs mt-1">
-                    Generated on {new Date().toLocaleString()} by {profile?.full_name} ({profile?.email}) | Total Records: {filteredUsers.length}
+                    Generated on {new Date().toLocaleString()} by {profile?.full_name} ({profile?.email}) | Role Filter: {userRoleFilter} | Total Records: {filteredUsers.length}
                   </p>
                 </div>
 
                 {/* Search Header */}
-                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between gap-4 no-print">
-                  <div className="w-full max-w-md">
+                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+                  <div className="w-full sm:max-w-md">
                     <Input
                       id="userSearch"
                       placeholder="Search users by name, email, or PUP ID..."
@@ -503,7 +535,18 @@ export default function AdminManagementPage() {
                       }
                     />
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <select
+                      value={userRoleFilter}
+                      onChange={(e) => setUserRoleFilter(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-maroon-800"
+                    >
+                      <option value="ALL">All Roles</option>
+                      <option value="SUPER_ADMIN">Super Admins</option>
+                      <option value="ADMIN">Admins</option>
+                      <option value="USER">Users</option>
+                      <option value="GUEST">Guests / Visitors</option>
+                    </select>
                     <button
                       onClick={exportUsersCSV}
                       className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
@@ -549,7 +592,7 @@ export default function AdminManagementPage() {
                           <th className="py-4 px-6">Email</th>
                           <th className="py-4 px-6">RFID Tag</th>
                           <th className="py-4 px-6">Role</th>
-                          {profile?.is_super_admin && <th className="py-4 px-6 text-right">Actions</th>}
+                          {profile?.is_super_admin && <th className="py-4 px-6 text-right no-print">Actions</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
