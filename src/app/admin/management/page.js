@@ -242,14 +242,161 @@ export default function AdminManagementPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // CSV Export & Print Logic
+  const downloadCSV = (headers, rows, filename) => {
+    const csvContent = [
+      headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','),
+      ...rows.map(row => row.map(val => `"${(val === null || val === undefined ? '' : String(val)).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportUsersCSV = () => {
+    const headers = ['Full Name', 'PUP ID', 'Email', 'RFID Tag', 'Role'];
+    const rows = filteredUsers.map(user => {
+      const isGuest = user.pup_id?.startsWith('VISITOR-');
+      const role = isGuest ? 'Guest' : user.is_super_admin ? 'Super Admin' : user.is_admin ? 'Admin' : 'User';
+      return [
+        user.full_name || '',
+        user.pup_id || '',
+        user.email || '',
+        user.rfid_tag || '',
+        role
+      ];
+    });
+    downloadCSV(headers, rows, `parqify_users_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const exportTicketsCSV = () => {
+    const headers = [
+      'Ticket ID', 
+      'User Full Name', 
+      'User Email', 
+      'Parking Lot', 
+      'Parking Slot', 
+      'Booked At', 
+      'Entry Time', 
+      'Exit Time', 
+      'Status'
+    ];
+    const rows = filteredTickets.map(ticket => {
+      return [
+        ticket.id || '',
+        ticket.users?.full_name || 'Visitor / Guest',
+        ticket.users?.email || '',
+        ticket.parking_slots?.parking_lots?.name || '',
+        ticket.parking_slots?.slot_name || '',
+        ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '',
+        ticket.entry_time ? new Date(ticket.entry_time).toLocaleString() : '',
+        ticket.exit_time ? new Date(ticket.exit_time).toLocaleString() : '',
+        ticket.status || ''
+      ];
+    });
+    downloadCSV(headers, rows, `parqify_tickets_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (isVerifying) {
     return <LoadingScreen message="Verifying Admin Access..." />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-12">
+      {/* Global CSS overrides for Print/PDF */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Hide all non-printable elements */
+          .no-print,
+          nav,
+          button,
+          select,
+          input,
+          aside,
+          footer,
+          .fixed,
+          [role="dialog"] {
+            display: none !important;
+          }
+          
+          /* Reset backgrounds and text colors for print */
+          body, html {
+            background: white !important;
+            color: black !important;
+            font-size: 11px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          main {
+            margin: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+
+          /* Remove card styling that makes print ugly */
+          .card-content-print {
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+          }
+
+          .print-container {
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+
+          /* Table optimizations for printing */
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            color: black !important;
+          }
+
+          th {
+            background-color: #f3f4f6 !important;
+            color: black !important;
+            font-weight: bold !important;
+            border: 1px solid #e5e7eb !important;
+            padding: 6px 12px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          td {
+            border: 1px solid #e5e7eb !important;
+            padding: 6px 12px !important;
+            color: black !important;
+            font-size: 10px !important;
+          }
+
+          /* Prevent table rows from splitting across pages */
+          tr {
+            page-break-inside: avoid !important;
+          }
+        }
+      ` }} />
+
       {/* Navbar Header */}
-      <nav className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-50">
+      <nav className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-50 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
@@ -284,22 +431,24 @@ export default function AdminManagementPage() {
       </nav>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6 print-container">
         
         {/* Status Alerts */}
-        {error && (
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-        {successMessage && (
-          <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400 text-sm">
-            {successMessage}
-          </div>
-        )}
+        <div className="no-print space-y-2">
+          {error && (
+            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+          {successMessage && (
+            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400 text-sm">
+              {successMessage}
+            </div>
+          )}
+        </div>
 
         {/* Tab Controls */}
-        <div className="flex bg-gray-100 dark:bg-zinc-900 p-1 rounded-xl w-fit">
+        <div className="flex bg-gray-100 dark:bg-zinc-900 p-1 rounded-xl w-fit no-print">
           <button
             type="button"
             onClick={() => setActiveTab('users')}
@@ -325,14 +474,22 @@ export default function AdminManagementPage() {
         </div>
 
         {/* TABS CONTAINER */}
-        <Card className="border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        <Card className="border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden card-content-print">
           <CardContent className="p-0">
 
             {/* TAB 1: USERS */}
             {activeTab === 'users' && (
-              <div>
+              <div className="card-content-print">
+                {/* Print-Only Header */}
+                <div className="hidden print:block mb-6 border-b-2 border-brand-maroon-800 pb-3">
+                  <h2 className="text-xl font-bold text-gray-900">Parqify - PUP Manila User Registry</h2>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Generated on {new Date().toLocaleString()} by {profile?.full_name} ({profile?.email}) | Total Records: {filteredUsers.length}
+                  </p>
+                </div>
+
                 {/* Search Header */}
-                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between gap-4">
+                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between gap-4 no-print">
                   <div className="w-full max-w-md">
                     <Input
                       id="userSearch"
@@ -346,15 +503,37 @@ export default function AdminManagementPage() {
                       }
                     />
                   </div>
-                  <button 
-                    onClick={loadData}
-                    className="p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors shrink-0"
-                    title="Reload data"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={exportUsersCSV}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                      title="Export filtered users as CSV"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                      <span>Export CSV</span>
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                      title="Print or Export PDF"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2Zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10Z" />
+                      </svg>
+                      <span>Print / PDF</span>
+                    </button>
+                    <button 
+                      onClick={loadData}
+                      className="p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors shrink-0"
+                      title="Reload data"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Table list */}
@@ -404,7 +583,7 @@ export default function AdminManagementPage() {
                                 </span>
                               </td>
                               {profile?.is_super_admin && (
-                                <td className="py-4 px-6 text-right">
+                                <td className="py-4 px-6 text-right no-print">
                                   <div className="flex items-center justify-end gap-2">
                                     <button
                                       onClick={() => {
@@ -444,12 +623,20 @@ export default function AdminManagementPage() {
                 </div>
               </div>
             )}
-
+ 
             {/* TAB 2: TICKETS */}
             {activeTab === 'tickets' && (
-              <div>
+              <div className="card-content-print">
+                {/* Print-Only Header */}
+                <div className="hidden print:block mb-6 border-b-2 border-brand-maroon-800 pb-3">
+                  <h2 className="text-xl font-bold text-gray-900">Parqify - PUP Manila Ticket Transaction Logs</h2>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Generated on {new Date().toLocaleString()} by {profile?.full_name} ({profile?.email}) | Status Filter: {ticketStatusFilter} | Total Records: {filteredTickets.length}
+                  </p>
+                </div>
+
                 {/* Filters Header */}
-                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
                   <div className="w-full sm:max-w-md">
                     <Input
                       id="ticketSearch"
@@ -463,7 +650,7 @@ export default function AdminManagementPage() {
                       }
                     />
                   </div>
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <select
                       value={ticketStatusFilter}
                       onChange={(e) => setTicketStatusFilter(e.target.value)}
@@ -476,6 +663,26 @@ export default function AdminManagementPage() {
                       <option value="EXPIRED">Expired</option>
                       <option value="OVERRIDDEN">Overridden</option>
                     </select>
+                    <button
+                      onClick={exportTicketsCSV}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                      title="Export filtered tickets as CSV"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                      <span>Export CSV</span>
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                      title="Print or Export PDF"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2Zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10Z" />
+                      </svg>
+                      <span>Print / PDF</span>
+                    </button>
                     <button 
                       onClick={loadData}
                       className="p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors shrink-0"
@@ -487,7 +694,7 @@ export default function AdminManagementPage() {
                     </button>
                   </div>
                 </div>
-
+ 
                 {/* Table list */}
                 <div className="overflow-x-auto">
                   {isLoadingData ? (
@@ -501,7 +708,7 @@ export default function AdminManagementPage() {
                           <th className="py-4 px-6">Lot / Slot</th>
                           <th className="py-4 px-6">Timestamps</th>
                           <th className="py-4 px-6">Status</th>
-                          {profile?.is_super_admin && <th className="py-4 px-6 text-right">Actions</th>}
+                          {profile?.is_super_admin && <th className="py-4 px-6 text-right no-print">Actions</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
@@ -535,7 +742,7 @@ export default function AdminManagementPage() {
                               </span>
                             </td>
                             {profile?.is_super_admin && (
-                              <td className="py-4 px-6 text-right">
+                              <td className="py-4 px-6 text-right no-print">
                                 <div className="flex items-center justify-end gap-2">
                                   <button
                                     onClick={() => {
