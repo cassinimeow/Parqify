@@ -50,14 +50,19 @@ export async function PUT(request) {
       .from('users')
       .update({ is_admin, is_super_admin })
       .eq('id', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ user: data });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ 
+        error: 'Update failed. The user profile could not be updated. Please ensure you have RLS "UPDATE" permissions enabled for the users table in your Supabase Dashboard.' 
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({ user: data[0] });
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

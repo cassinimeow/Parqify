@@ -16,15 +16,12 @@ export async function GET() {
     }
 
     const supabase = await getSupabase();
-    const { data: tickets, error } = await supabase
+    
+    // Fetch tickets with joined slot and lot data
+    const { data: tickets, error: ticketsError } = await supabase
       .from('tickets')
       .select(`
         *,
-        users (
-          full_name,
-          email,
-          pup_id
-        ),
         parking_slots (
           slot_name,
           parking_lots (
@@ -34,11 +31,26 @@ export async function GET() {
       `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (ticketsError) {
+      return NextResponse.json({ error: ticketsError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ tickets });
+    // Fetch all users to map them in memory (bypasses cross-schema relation query limitations)
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, full_name, email, pup_id');
+
+    if (usersError) {
+      return NextResponse.json({ error: usersError.message }, { status: 400 });
+    }
+
+    // Map the users to their tickets in memory
+    const mappedTickets = tickets.map(ticket => ({
+      ...ticket,
+      users: users.find(u => u.id === ticket.user_id) || null
+    }));
+
+    return NextResponse.json({ tickets: mappedTickets });
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -76,16 +88,23 @@ export async function PUT(request) {
     if (entry_time !== undefined) updateData.entry_time = entry_time;
     if (exit_time !== undefined) updateData.exit_time = exit_time;
 
-    const { data: updatedTicket, error: updateError } = await supabase
+    const { data: updatedTicketData, error: updateError } = await supabase
       .from('tickets')
       .update(updateData)
       .eq('id', id)
-      .select()
-      .single();
+      .select();
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
+
+    if (!updatedTicketData || updatedTicketData.length === 0) {
+      return NextResponse.json({ 
+        error: 'Update failed. The ticket could not be modified. Please ensure you have RLS "UPDATE" permissions enabled for the tickets table in your Supabase Dashboard.' 
+      }, { status: 400 });
+    }
+
+    const updatedTicket = updatedTicketData[0];
 
     // 3. Keep slot status synchronized
     if (ticket.slot_id) {
