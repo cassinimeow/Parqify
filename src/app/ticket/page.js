@@ -6,6 +6,11 @@ import { MapPin, Clock, Car, CheckCircle, ChevronLeft, Ticket as TicketIcon } fr
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import Button from '@/components/ui/Button';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default function DigitalTicket() {
   const [user, setUser] = useState(null);
@@ -88,6 +93,40 @@ export default function DigitalTicket() {
 
     fetchData();
   }, [router]);
+
+  // Realtime subscription for this specific ticket updates (overrides, checkout, scans, etc.)
+  useEffect(() => {
+    if (!supabase || !ticket?.id) return;
+
+    const channel = supabase
+      .channel(`ticket-single-${ticket.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets',
+          filter: `id=eq.${ticket.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setTicket(prev => {
+              if (!prev || prev.id !== payload.new.id) return prev;
+              return {
+                ...prev,
+                ...payload.new,
+                parking_slots: prev.parking_slots // Preserve relation data
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ticket?.id]);
 
   const handleSimulateScan = async () => {
     if (!ticket) return;

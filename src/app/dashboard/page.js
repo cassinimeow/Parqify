@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -66,6 +71,33 @@ export default function DashboardPage() {
 
     fetchUserAndTickets();
   }, [router]);
+
+  // Realtime subscription for user profile updates (privileges, names, etc.)
+  useEffect(() => {
+    if (!supabase || !user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setProfile(payload.new);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   async function handleLogout() {
     setIsLoggingOut(true);
