@@ -8,6 +8,22 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { validatePasswordStrength } from '@/lib/validation';
 
+const CheckIcon = () => (
+  <div className="w-4 h-4 rounded bg-emerald-500 flex items-center justify-center shrink-0">
+    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  </div>
+);
+
+const CrossIcon = () => (
+  <div className="w-4 h-4 rounded bg-rose-500 flex items-center justify-center shrink-0">
+    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </div>
+);
+
 export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
@@ -589,18 +605,41 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
                   }
                 />
                 {isSignUp && form.password && (
-                  <div className="mt-1.5 px-1 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-gray-500 dark:text-zinc-400 font-sans">Password Strength:</span>
-                      <span className={`font-bold font-sans ${getPasswordStrength(form.password).text}`}>
-                        {getPasswordStrength(form.password).label}
-                      </span>
-                    </div>
-                    <div className="h-1 w-full bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="mt-2.5 px-1 space-y-2 animate-in slide-in-from-top-1 duration-200">
+                    <div className="h-1.5 w-full bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div 
                         className={`h-full transition-all duration-300 ${getPasswordStrength(form.password).color}`} 
                         style={{ width: `${(getPasswordStrength(form.password).score / 5) * 100}%` }}
                       />
+                    </div>
+                    <div className="text-xs font-semibold font-sans">
+                      <span className="text-gray-500 dark:text-zinc-400">Strength: </span>
+                      <span className={getPasswordStrength(form.password).text}>
+                        {getPasswordStrength(form.password).label}
+                      </span>
+                    </div>
+                    {/* Requirement Checklist */}
+                    <div className="space-y-1.5 pt-0.5">
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
+                        {form.password.length >= 8 ? <CheckIcon /> : <CrossIcon />}
+                        <span>At least 8 characters</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
+                        {/[A-Z]/.test(form.password) ? <CheckIcon /> : <CrossIcon />}
+                        <span>One uppercase letter (A-Z)</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
+                        {/[a-z]/.test(form.password) ? <CheckIcon /> : <CrossIcon />}
+                        <span>One lowercase letter (a-z)</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
+                        {/\d/.test(form.password) ? <CheckIcon /> : <CrossIcon />}
+                        <span>One number (0-9)</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans">
+                        {/[^a-zA-Z0-9]/.test(form.password) ? <CheckIcon /> : <CrossIcon />}
+                        <span>One special character (!@#$...)</span>
+                      </div>
                     </div>
                   </div>
                 )}
