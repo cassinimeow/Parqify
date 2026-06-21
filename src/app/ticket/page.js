@@ -205,7 +205,7 @@ export default function DigitalTicket() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#09090b] text-gray-900 dark:text-gray-100 font-sans relative flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-brand-maroon-50/50 via-white to-brand-gold-50/50 dark:from-brand-maroon-950 dark:via-[#09090b] dark:to-brand-gold-950 text-gray-900 dark:text-gray-100 font-sans relative flex flex-col">
       {/* Background Accents */}
       <div className="absolute inset-0 pointer-events-none hidden dark:block overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-brand-maroon-900/20 blur-[100px]" />

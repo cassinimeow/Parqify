@@ -422,7 +422,12 @@ export default function AdminManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-brand-maroon-50/50 via-white to-brand-gold-50/50 dark:from-brand-maroon-950 dark:via-[#09090b] dark:to-brand-gold-950 relative overflow-hidden pb-12">
+      {/* Dark Mode Background Accents */}
+      <div className="absolute inset-0 pointer-events-none hidden dark:block no-print">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-brand-maroon-900/20 blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-brand-gold-900/10 blur-[100px]" />
+      </div>
       {/* Global CSS overrides for Print/PDF */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
@@ -532,7 +537,7 @@ export default function AdminManagementPage() {
       ` }} />
 
       {/* Navbar Header */}
-      <nav className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-50 no-print">
+      <nav className="bg-white/70 dark:bg-black/40 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-50 no-print backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 

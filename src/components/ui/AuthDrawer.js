@@ -39,6 +39,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   const [otpCode, setOtpCode] = useState('');
   const [captchaToken, setCaptchaToken] = useState(null);
   const captchaRef = useRef(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Adjust state during render when props or tabs toggle
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -47,6 +48,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
     if (isOpen) {
       setIsSignUp(initialMode === 'signup');
       setIsForgotPassword(false);
+      setRememberMe(false);
       setError('');
       setSuccess('');
       setShowSignupOtpInput(false);
@@ -308,7 +310,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
       const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
       const body = isSignUp
         ? { email: form.email, password: form.password, full_name: form.full_name, pup_id: form.pup_id, captchaToken }
-        : { email: form.email, password: form.password, captchaToken };
+        : { email: form.email, password: form.password, captchaToken, rememberMe };
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -686,7 +688,16 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
             )}
 
             {!isForgotPassword && !isSignUp && (
-              <div className="flex justify-end -mt-2 mb-2">
+              <div className="flex items-center justify-between -mt-2 mb-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-700 text-brand-maroon-800 focus:ring-brand-maroon-500 cursor-pointer accent-brand-maroon-800 dark:bg-zinc-900"
+                  />
+                  <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Remember me</span>
+                </label>
                 <button
                   type="button"
                   onClick={() => {
