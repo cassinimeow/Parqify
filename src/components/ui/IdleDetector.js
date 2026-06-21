@@ -13,6 +13,7 @@ export default function IdleDetector() {
   const pingTimerRef = useRef(null);
   const lastActivityRef = useRef(0);
   const hasBeenActiveSincePingRef = useRef(false);
+  const isRememberMeRef = useRef(false);
 
   // Protected paths where auto-logout should apply
   const isProtectedPath = pathname && 
@@ -25,6 +26,21 @@ export default function IdleDetector() {
       if (pingTimerRef.current) clearInterval(pingTimerRef.current);
       return;
     }
+
+    const checkRememberMe = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          isRememberMeRef.current = !!data.rememberMe;
+          if (isRememberMeRef.current && timeoutTimerRef.current) {
+            clearTimeout(timeoutTimerRef.current);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch rememberMe status:', err);
+      }
+    };
 
     const logoutUser = async () => {
       try {
@@ -41,9 +57,11 @@ export default function IdleDetector() {
       hasBeenActiveSincePingRef.current = true;
       
       if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current);
-      timeoutTimerRef.current = setTimeout(() => {
-        logoutUser();
-      }, INACTIVITY_TIMEOUT);
+      if (!isRememberMeRef.current) {
+        timeoutTimerRef.current = setTimeout(() => {
+          logoutUser();
+        }, INACTIVITY_TIMEOUT);
+      }
     };
 
     // Listeners for user activity
@@ -56,6 +74,9 @@ export default function IdleDetector() {
     // Start initial timeout timer
     resetTimeout();
 
+    // Fetch initial remember me status
+    checkRememberMe();
+
     // Start periodic ping to extend the Supabase session if user has been active
     pingTimerRef.current = setInterval(async () => {
       if (hasBeenActiveSincePingRef.current) {
@@ -67,6 +88,12 @@ export default function IdleDetector() {
           if (res.status === 401) {
             // User was already logged out or deleted
             window.location.href = '/';
+          } else if (res.ok) {
+            const data = await res.json();
+            isRememberMeRef.current = !!data.rememberMe;
+            if (isRememberMeRef.current && timeoutTimerRef.current) {
+              clearTimeout(timeoutTimerRef.current);
+            }
           }
         } catch (err) {
           console.error('Failed to touch session:', err);

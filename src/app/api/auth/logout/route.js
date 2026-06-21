@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { logoutUser } from '@/lib/auth';
 
 /**
@@ -6,6 +7,9 @@ import { logoutUser } from '@/lib/auth';
  */
 export async function POST() {
   try {
+    const cookieStore = await cookies();
+    cookieStore.delete('sb-remember-me');
+
     const result = await logoutUser();
 
     if (result.error) {

@@ -7,6 +7,9 @@ export async function updateSession(request) {
     return NextResponse.next();
   }
 
+  const hasRememberMe = request.cookies.get('sb-remember-me')?.value === 'true';
+  const maxAgeVal = hasRememberMe ? 30 * 24 * 60 * 60 : 900;
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -27,8 +30,8 @@ export async function updateSession(request) {
           cookiesToSet.forEach(({ name, value, options }) => {
             const opts = { ...options };
             if (opts.maxAge !== 0) {
-              opts.maxAge = 900;
-              opts.expires = new Date(Date.now() + 900 * 1000);
+              opts.maxAge = maxAgeVal;
+              opts.expires = new Date(Date.now() + maxAgeVal * 1000);
             }
             opts.path = '/';
             supabaseResponse.cookies.set(name, value, opts);
@@ -49,8 +52,8 @@ export async function updateSession(request) {
     const supabaseCookies = request.cookies.getAll().filter(c => c.name.startsWith('sb-'));
     supabaseCookies.forEach(cookie => {
       supabaseResponse.cookies.set(cookie.name, cookie.value, {
-        maxAge: 900,
-        expires: new Date(Date.now() + 900 * 1000),
+        maxAge: maxAgeVal,
+        expires: new Date(Date.now() + maxAgeVal * 1000),
         path: '/',
         httpOnly: true,
         secure: true,

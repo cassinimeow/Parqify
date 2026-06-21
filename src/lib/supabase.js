@@ -35,11 +35,13 @@ export async function getSupabase() {
         },
         setAll(cookiesToSet) {
           try {
+            const hasRememberMe = cookieStore.get('sb-remember-me')?.value === 'true';
+            const maxAgeVal = hasRememberMe ? 30 * 24 * 60 * 60 : 900;
             cookiesToSet.forEach(({ name, value, options }) => {
               const opts = { ...options };
               if (opts.maxAge !== 0) {
-                opts.maxAge = 900;
-                opts.expires = new Date(Date.now() + 900 * 1000);
+                opts.maxAge = maxAgeVal;
+                opts.expires = new Date(Date.now() + maxAgeVal * 1000);
               }
               opts.path = '/';
               cookieStore.set(name, value, opts);

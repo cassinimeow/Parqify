@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getCurrentUser } from '@/lib/auth';
 
 /**
@@ -16,9 +17,13 @@ export async function GET() {
       );
     }
 
+    const cookieStore = await cookies();
+    const hasRememberMe = cookieStore.get('sb-remember-me')?.value === 'true';
+
     return NextResponse.json({
       user: result.user,
       profile: result.profile,
+      rememberMe: hasRememberMe,
     });
   } catch (err) {
     return NextResponse.json(
