@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
+import { logAdminAction } from '@/lib/audit';
 
 /**
  * GET /api/admin/users - List all users (Admins & Super Admins)
@@ -46,6 +47,15 @@ export async function PUT(request) {
     }
 
     const supabase = await getSupabase();
+    
+    // Fetch the target user details before updating for logging
+    const { data: targetUser } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', id)
+      .single();
+    const targetName = targetUser ? targetUser.full_name : 'Unknown';
+
     const { data, error } = await supabase
       .from('users')
       .update({ is_admin, is_super_admin })
@@ -61,6 +71,16 @@ export async function PUT(request) {
         error: 'Update failed. The user profile could not be updated. Please ensure you have RLS "UPDATE" permissions enabled for the users table in your Supabase Dashboard.' 
       }, { status: 400 });
     }
+
+    // Log the audit event
+    await logAdminAction(
+      supabase,
+      userResult.user.id,
+      'UPDATE_USER_ROLE',
+      'USER',
+      id,
+      `Super Admin "${userResult.profile.full_name}" updated privileges for user "${targetName}": is_admin=${!!is_admin}, is_super_admin=${!!is_super_admin}.`
+    );
 
     return NextResponse.json({ user: data[0] });
   } catch (err) {
@@ -88,6 +108,15 @@ export async function DELETE(request) {
     }
 
     const supabase = await getSupabase();
+    
+    // Fetch user details before deleting for logging
+    const { data: targetUser } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', id)
+      .single();
+    const targetName = targetUser ? targetUser.full_name : 'Unknown';
+
     const { error } = await supabase
       .from('users')
       .delete()
@@ -96,6 +125,16 @@ export async function DELETE(request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Log the audit event
+    await logAdminAction(
+      supabase,
+      userResult.user.id,
+      'DELETE_USER',
+      'USER',
+      id,
+      `Super Admin "${userResult.profile.full_name}" deleted user profile for "${targetName}".`
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

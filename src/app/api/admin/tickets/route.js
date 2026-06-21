@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
+import { logAdminAction } from '@/lib/audit';
 
 /**
  * GET /api/admin/tickets - List all tickets (Admins & Super Admins)
@@ -106,6 +107,23 @@ export async function PUT(request) {
 
     const updatedTicket = updatedTicketData[0];
 
+    // Fetch the target user name and slot name for logging details
+    const { data: ticketWithNames } = await supabase
+      .from('tickets')
+      .select('status, user_id, slot_id, parking_slots(slot_name, parking_lots(name))')
+      .eq('id', id)
+      .single();
+
+    let targetUserName = 'Visitor / Guest';
+    if (ticketWithNames?.user_id) {
+      const { data: uData } = await supabase.from('users').select('full_name').eq('id', ticketWithNames.user_id).single();
+      if (uData) targetUserName = uData.full_name;
+    }
+
+    const slotName = ticketWithNames?.parking_slots ? ticketWithNames.parking_slots.slot_name : 'Unknown';
+    const lotName = ticketWithNames?.parking_slots?.parking_lots ? ticketWithNames.parking_slots.parking_lots.name : 'Unknown';
+    const oldStatus = ticket?.status || 'Unknown';
+
     // 3. Keep slot status synchronized
     if (ticket.slot_id) {
       let slotStatus = 'AVAILABLE';
@@ -122,6 +140,16 @@ export async function PUT(request) {
         .update({ status: slotStatus })
         .eq('id', ticket.slot_id);
     }
+
+    // Log the audit event
+    await logAdminAction(
+      supabase,
+      userResult.user.id,
+      'OVERRIDE_TICKET',
+      'TICKET',
+      id,
+      `Super Admin "${userResult.profile.full_name}" overrode ticket status for "${targetUserName}" (Lot: ${lotName}, Slot: ${slotName}) from "${oldStatus}" to "${status}".`
+    );
 
     return NextResponse.json({ ticket: updatedTicket });
   } catch (err) {
@@ -145,12 +173,21 @@ export async function DELETE(request) {
 
     const supabase = await getSupabase();
 
-    // 1. Get the ticket details to find slot_id and check status
+    // 1. Get the ticket details to find slot_id, status, and names for logging
     const { data: ticket } = await supabase
       .from('tickets')
-      .select('slot_id, status')
+      .select('user_id, slot_id, status, parking_slots(slot_name, parking_lots(name))')
       .eq('id', id)
       .single();
+
+    let targetUserName = 'Visitor / Guest';
+    if (ticket?.user_id) {
+      const { data: uData } = await supabase.from('users').select('full_name').eq('id', ticket.user_id).single();
+      if (uData) targetUserName = uData.full_name;
+    }
+
+    const slotName = ticket?.parking_slots ? ticket.parking_slots.slot_name : 'Unknown';
+    const lotName = ticket?.parking_slots?.parking_lots ? ticket.parking_slots.parking_lots.name : 'Unknown';
 
     // 2. If the deleted ticket was active or reserved, free up its slot
     if (ticket && (ticket.status === 'ACTIVE' || ticket.status === 'RESERVED') && ticket.slot_id) {
@@ -169,6 +206,16 @@ export async function DELETE(request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Log the audit event
+    await logAdminAction(
+      supabase,
+      userResult.user.id,
+      'DELETE_TICKET',
+      'TICKET',
+      id,
+      `Super Admin "${userResult.profile.full_name}" deleted ticket record for "${targetUserName}" (Lot: ${lotName}, Slot: ${slotName}).`
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

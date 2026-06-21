@@ -48,6 +48,23 @@ export async function POST(request) {
 
     const user = data.user;
 
+    // Update session user agent if provided
+    const userAgent = request.headers.get('user-agent');
+    if (data.session && userAgent) {
+      try {
+        const payload = JSON.parse(Buffer.from(data.session.access_token.split('.')[1], 'base64').toString());
+        const sessionId = payload.session_id;
+        if (sessionId) {
+          await supabase.rpc('update_session_user_agent', {
+            target_session_id: sessionId,
+            browser_user_agent: userAgent
+          });
+        }
+      } catch (e) {
+        console.error('Failed to update session user agent:', e);
+      }
+    }
+
     // 3. Fetch the profile that was automatically created by the database trigger
     const { data: profile, error: profileError } = await supabase
       .from('users')

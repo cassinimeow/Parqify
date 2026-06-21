@@ -5,7 +5,7 @@ import { getSupabase } from './supabase';
  * @param {{ email: string, password: string, fullName: string, pupId: string }} params
  * @returns {{ user: object, session: object } | { error: string }}
  */
-export async function registerUser({ email, password, fullName, pupId, captchaToken }) {
+export async function registerUser({ email, password, fullName, pupId, captchaToken, userAgent }) {
   const supabase = await getSupabase();
 
   // Step -1: Call DB cleaner to wipe old unconfirmed accounts matching email or PUP ID
@@ -49,6 +49,22 @@ export async function registerUser({ email, password, fullName, pupId, captchaTo
     return { error: authError.message };
   }
 
+  // Update session user agent if provided
+  if (authData.session && userAgent) {
+    try {
+      const payload = JSON.parse(Buffer.from(authData.session.access_token.split('.')[1], 'base64').toString());
+      const sessionId = payload.session_id;
+      if (sessionId) {
+        await supabase.rpc('update_session_user_agent', {
+          target_session_id: sessionId,
+          browser_user_agent: userAgent
+        });
+      }
+    } catch (e) {
+      console.error('Failed to update session user agent:', e);
+    }
+  }
+
   // Profile creation is now handled securely inside the database via a Postgres Trigger 
   // (handle_new_user) listening to auth.users, which bypasses RLS issues.
 
@@ -63,7 +79,7 @@ export async function registerUser({ email, password, fullName, pupId, captchaTo
  * @param {{ email: string, password: string }} params
  * @returns {{ user: object, session: object } | { error: string }}
  */
-export async function loginUser({ email, password, captchaToken }) {
+export async function loginUser({ email, password, captchaToken, userAgent }) {
   const supabase = await getSupabase();
 
   // Step 1: Check if the user exists in our public schema to provide better error messages
@@ -90,6 +106,22 @@ export async function loginUser({ email, password, captchaToken }) {
       return { error: 'Incorrect password. Please try again.' };
     }
     return { error: error.message };
+  }
+
+  // Update session user agent if provided
+  if (data.session && userAgent) {
+    try {
+      const payload = JSON.parse(Buffer.from(data.session.access_token.split('.')[1], 'base64').toString());
+      const sessionId = payload.session_id;
+      if (sessionId) {
+        await supabase.rpc('update_session_user_agent', {
+          target_session_id: sessionId,
+          browser_user_agent: userAgent
+        });
+      }
+    } catch (e) {
+      console.error('Failed to update session user agent:', e);
+    }
   }
 
   // Fetch the user's profile from public.users

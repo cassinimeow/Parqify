@@ -101,3 +101,89 @@ CREATE POLICY "Users can delete their own avatar."
   USING ( auth.uid() = owner );
 
 -- ----------------------------------------------------
+-- 6. SESSION MANAGEMENT HELPER FUNCTIONS
+-- ----------------------------------------------------
+
+-- Function to retrieve all active sessions for the currently authenticated user
+CREATE OR REPLACE FUNCTION public.get_user_sessions()
+RETURNS TABLE (
+  id uuid,
+  created_at timestamptz,
+  updated_at timestamptz,
+  ip inet,
+  user_agent text,
+  is_current boolean
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    s.id, 
+    s.created_at, 
+    s.updated_at, 
+    s.ip, 
+    s.user_agent,
+    s.id = COALESCE((auth.jwt() ->> 'session_id')::uuid, '00000000-0000-0000-0000-000000000000'::uuid) AS is_current
+  FROM auth.sessions s
+  WHERE s.user_id = auth.uid()
+  ORDER BY s.created_at DESC;
+END;
+$$;
+
+-- Function to revoke a specific session for the currently authenticated user
+CREATE OR REPLACE FUNCTION public.revoke_user_session(target_session_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM auth.sessions s
+  WHERE s.id = target_session_id AND s.user_id = auth.uid();
+  RETURN FOUND;
+END;
+$$;
+
+-- Function to update the user agent of the current session to match the browser
+CREATE OR REPLACE FUNCTION public.update_current_session_user_agent(browser_user_agent text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_sid uuid;
+BEGIN
+  current_sid := COALESCE((auth.jwt() ->> 'session_id')::uuid, '00000000-0000-0000-0000-000000000000'::uuid);
+  
+  IF current_sid != '00000000-0000-0000-0000-000000000000'::uuid THEN
+    UPDATE auth.sessions
+    SET user_agent = browser_user_agent
+    WHERE id = current_sid 
+      AND user_id = auth.uid();
+    RETURN FOUND;
+  END IF;
+  
+  RETURN FALSE;
+END;
+$$;
+
+-- Function to update the user agent of a specific session for the currently authenticated user
+CREATE OR REPLACE FUNCTION public.update_session_user_agent(target_session_id uuid, browser_user_agent text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE auth.sessions
+  SET user_agent = browser_user_agent
+  WHERE id = target_session_id 
+    AND user_id = auth.uid();
+  RETURN FOUND;
+END;
+$$;
+

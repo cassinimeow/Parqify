@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 /**
  * Returns the Supabase SSR server client instance.
@@ -7,6 +7,23 @@ import { cookies } from 'next/headers';
  */
 export async function getSupabase() {
   const cookieStore = await cookies();
+  const globalHeaders = {};
+
+  try {
+    const headersList = await headers();
+    const userAgent = headersList.get('user-agent');
+    const clientIp = headersList.get('x-forwarded-for') || headersList.get('x-real-ip');
+    
+    if (userAgent) {
+      globalHeaders['User-Agent'] = userAgent;
+    }
+    if (clientIp) {
+      // Forward the original client IP (split if it contains multiple proxy hops)
+      globalHeaders['X-Forwarded-For'] = clientIp.split(',')[0].trim();
+    }
+  } catch (error) {
+    // headers() might throw in non-request contexts
+  }
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -34,6 +51,9 @@ export async function getSupabase() {
           }
         },
       },
+      global: {
+        headers: globalHeaders,
+      }
     }
   );
 }

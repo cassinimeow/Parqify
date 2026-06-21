@@ -34,6 +34,7 @@ const CrossIcon = () => (
 export default function SettingsPage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
+  const toastIdRef = useRef(0);
 
   // Profile State
   const [user, setUser] = useState(null);
@@ -71,6 +72,158 @@ export default function SettingsPage() {
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
   const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' });
+
+  // Session Security States
+  const [isRevokingSessions, setIsRevokingSessions] = useState(false);
+  const [revokeMessage, setRevokeMessage] = useState({ type: '', text: '' });
+
+  // Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success', id: 0 });
+
+  // Watch profile notifications
+  useEffect(() => {
+    if (profileMessage.text) {
+      setToast({ show: true, message: profileMessage.text, type: profileMessage.type, id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setProfileMessage({ type: '', text: '' });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [profileMessage]);
+
+  // Watch security notifications
+  useEffect(() => {
+    if (securityMessage.text) {
+      setToast({ show: true, message: securityMessage.text, type: securityMessage.type, id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setSecurityMessage({ type: '', text: '' });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [securityMessage]);
+
+  // Watch session revocation notifications
+  useEffect(() => {
+    if (revokeMessage.text) {
+      setToast({ show: true, message: revokeMessage.text, type: revokeMessage.type, id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setRevokeMessage({ type: '', text: '' });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [revokeMessage]);
+
+  // Active Sessions States
+  const [sessions, setSessions] = useState([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+
+  const loadSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const res = await fetch('/api/user/sessions');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSessions(data.sessions || []);
+    } catch (err) {
+      console.error('Failed to load sessions:', err);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId) => {
+    if (!confirm('Are you sure you want to sign out this device?')) return;
+    try {
+      const res = await fetch(`/api/user/sessions?id=${sessionId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      toastIdRef.current += 1;
+      setToast({ show: true, message: 'Device session revoked successfully!', type: 'success', id: toastIdRef.current });
+      loadSessions();
+    } catch (err) {
+      toastIdRef.current += 1;
+      setToast({ show: true, message: err.message || 'Failed to revoke session.', type: 'error', id: toastIdRef.current });
+    }
+  };
+
+  const parseUserAgent = (userAgent) => {
+    if (!userAgent) return 'Unknown Device';
+    const ua = userAgent.toLowerCase();
+    
+    // Determine OS
+    let os = 'Unknown OS';
+    if (ua.includes('windows nt 10.0')) os = 'Windows 10';
+    else if (ua.includes('windows nt 6.3')) os = 'Windows 8.1';
+    else if (ua.includes('windows nt 6.2')) os = 'Windows 8';
+    else if (ua.includes('windows nt 6.1')) os = 'Windows 7';
+    else if (ua.includes('windows')) os = 'Windows';
+    else if (ua.includes('macintosh') || ua.includes('mac os')) os = 'macOS';
+    else if (ua.includes('iphone') || ua.includes('ipad')) os = 'iOS';
+    else if (ua.includes('android')) os = 'Android';
+    else if (ua.includes('linux')) os = 'Linux';
+    
+    // Determine Browser
+    let browser = 'Unknown Browser';
+    if (ua.includes('edge') || ua.includes('edg')) browser = 'Edge';
+    else if (ua.includes('opera') || ua.includes('opr')) browser = 'Opera';
+    else if (ua.includes('firefox')) browser = 'Firefox';
+    else if (ua.includes('chrome')) browser = 'Chrome';
+    else if (ua.includes('safari')) browser = 'Safari';
+    else if (ua.includes('node')) browser = 'Node.js/API';
+    
+    return `${browser} on ${os}`;
+  };
+
+  const handleSignOutOtherDevices = async () => {
+    setIsRevokingSessions(true);
+    setRevokeMessage({ type: '', text: '' });
+    try {
+      const res = await fetch('/api/auth/revoke-other-sessions', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to revoke other sessions');
+      }
+      setRevokeMessage({ type: 'success', text: 'Successfully signed out of all other devices!' });
+      loadSessions();
+    } catch (err) {
+      setRevokeMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsRevokingSessions(false);
+    }
+  };
+
+  // Check for unsaved changes before leaving Settings page
+  const hasUnsavedChanges = 
+    (profile && (fullName !== (profile.full_name || '') || avatarFile !== null)) ||
+    (isChangingPassword && (password !== '' || confirmPassword !== '' || currentPassword !== ''));
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const navigateWithCheck = (targetPath) => {
+    if (hasUnsavedChanges) {
+      const confirmLeave = confirm('You have unsaved changes. Are you sure you want to leave?');
+      if (!confirmLeave) return;
+    }
+    router.push(targetPath);
+  };
 
   const getPasswordStrength = (pwd) => {
     if (!pwd) return { score: 0, label: '', color: 'bg-gray-200', text: 'text-gray-400' };
@@ -163,6 +316,7 @@ export default function SettingsPage() {
         setFullName(data.profile.full_name || '');
         setAvatarUrl(data.profile.avatar_url || null);
         setEmail(data.user.email || '');
+        loadSessions();
       } catch (err) {
         router.push('/login');
       } finally {
@@ -344,7 +498,7 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => router.push('/dashboard')}
+              onClick={() => navigateWithCheck('/dashboard')}
               className="p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -461,13 +615,6 @@ export default function SettingsPage() {
                 disabled={isGuest}
                 required
               />
-
-              {profileMessage.text && (
-                <div className={`p-3 rounded-lg text-sm ${profileMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                  {profileMessage.text}
-                </div>
-              )}
-
               <Button type="submit" isLoading={isSavingProfile} disabled={isGuest || !(profile && (fullName !== (profile.full_name || '') || avatarFile !== null))}>
                 Save Profile
               </Button>
@@ -513,13 +660,6 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   )}
-
-                  {securityMessage.text && (
-                    <div className={`p-3 rounded-lg text-sm ${securityMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                      {securityMessage.text}
-                    </div>
-                  )}
-
                   <Button 
                     type="submit" 
                     variant="default" 
@@ -680,12 +820,6 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  {securityMessage.text && (
-                    <div className={`p-3 rounded-lg text-sm ${securityMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                      {securityMessage.text}
-                    </div>
-                  )}
-
                   <div className="flex items-center gap-3">
                     <Button 
                       type="submit" 
@@ -714,6 +848,120 @@ export default function SettingsPage() {
                 </div>
               )}
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Session Security Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Session Security</CardTitle>
+            <CardDescription>Manage active sessions on other devices and browsers.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Sign Out of Other Devices</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Log out of all other active sessions and browsers except for this current one.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSignOutOtherDevices}
+                  isLoading={isRevokingSessions}
+                  disabled={isGuest || sessions.length <= 1}
+                  className="w-full sm:w-auto"
+                >
+                  Sign Out Other Devices
+                </Button>
+              </div>
+            </div>
+
+            {/* Active Sessions List */}
+            <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Device Sessions</h4>
+                <button
+                  type="button"
+                  onClick={loadSessions}
+                  disabled={isLoadingSessions}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                  title="Refresh sessions list"
+                >
+                  <svg 
+                    className={`w-4 h-4 ${isLoadingSessions ? 'animate-spin' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor" 
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                </button>
+              </div>
+              {isLoadingSessions ? (
+                <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
+                  <svg className="animate-spin h-4 w-4 text-brand-maroon-800 dark:text-zinc-400" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Loading active sessions...</span>
+                </div>
+              ) : sessions.length > 0 ? (
+                <div className="divide-y divide-gray-100 dark:divide-zinc-800/50 border border-gray-100 dark:border-zinc-800/80 rounded-xl overflow-hidden bg-gray-50/30 dark:bg-zinc-900/10">
+                  {sessions.map((sess) => (
+                    <div key={sess.id} className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-500 shrink-0 mt-0.5">
+                          {sess.user_agent?.toLowerCase().includes('iphone') || sess.user_agent?.toLowerCase().includes('android') ? (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H13.5M10.5 22.5H13.5M9 3.75H15M6 5.25H18V18.75H6V5.25ZM9 20.25H15" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {parseUserAgent(sess.user_agent)}
+                            </span>
+                            {sess.is_current && (
+                              <span className="px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-400 rounded-full border border-green-200 dark:border-green-900/30">
+                                This Device
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <span>IP: {sess.ip || 'Unknown'}</span>
+                            <span className="hidden sm:inline text-gray-300 dark:text-zinc-700">•</span>
+                            <span>Logged in: {new Date(sess.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {!sess.is_current && !isGuest && (
+                        <button
+                          onClick={() => handleRevokeSession(sess.id)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all shrink-0"
+                          title="Revoke session"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 py-2">No active sessions found.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -769,6 +1017,61 @@ export default function SettingsPage() {
         </Card>
 
       </main>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed bottom-6 right-6 z-[9999] animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className={`relative overflow-hidden rounded-xl border p-4 shadow-lg min-w-[280px] max-w-sm ${
+            toast.type === 'error'
+              ? 'bg-red-50 dark:bg-red-950/90 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
+              : 'bg-green-50 dark:bg-green-950/90 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+          }`}>
+            <div className="flex items-start gap-3">
+              {toast.type === 'error' ? (
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              )}
+              <div className="flex-1 text-sm font-medium pr-4">
+                {toast.message}
+              </div>
+              <button 
+                onClick={() => setToast(prev => ({ ...prev, show: false }))}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Loading/Progress Bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50 dark:bg-zinc-800/50">
+              <div 
+                className={`h-full animate-toast-progress ${
+                  toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'
+                }`}
+                style={{ animationDuration: '2000ms' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes toast-progress {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        .animate-toast-progress {
+          animation-name: toast-progress;
+          animation-timing-function: linear;
+          animation-fill-mode: forwards;
+        }
+      ` }} />
     </div>
   );
 }

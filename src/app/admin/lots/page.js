@@ -32,6 +32,31 @@ export default function AdminLotsPage() {
   const [newSlotStatus, setNewSlotStatus] = useState('AVAILABLE');
   
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success', id: 0 });
+
+  // Toast triggers
+  useEffect(() => {
+    if (error) {
+      setToast({ show: true, message: error, type: 'error', id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setError('');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      setToast({ show: true, message: success, type: 'success', id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setSuccess('');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   // Verify Admin Access
   useEffect(() => {
@@ -108,7 +133,7 @@ export default function AdminLotsPage() {
       return;
     }
 
-    setIsAddingLot(true);
+     setIsAddingLot(true);
     try {
       const res = await fetch('/api/parking/lots', {
         method: 'POST',
@@ -121,6 +146,7 @@ export default function AdminLotsPage() {
       setNewLotName('');
       setNewLotTotal('');
       fetchLots();
+      setSuccess('Parking lot created successfully!');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -143,6 +169,7 @@ export default function AdminLotsPage() {
       }
       if (selectedLot?.id === id) setSelectedLot(null);
       fetchLots();
+      setSuccess('Parking lot deleted successfully!');
     } catch (err) {
       setError(err.message);
     }
@@ -165,6 +192,7 @@ export default function AdminLotsPage() {
       setNewSlotName('');
       fetchSlots(selectedLot.id);
       fetchLots();
+      setSuccess(`Slot "${newSlotName}" added successfully!`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -185,6 +213,7 @@ export default function AdminLotsPage() {
         throw new Error(data.error);
       }
       fetchSlots(selectedLot.id);
+      setSuccess('Slot status updated successfully!');
     } catch (err) {
       setError(err.message);
     }
@@ -205,6 +234,7 @@ export default function AdminLotsPage() {
       }
       fetchSlots(selectedLot.id);
       fetchLots();
+      setSuccess('Slot deleted successfully!');
     } catch (err) {
       setError(err.message);
     }
@@ -256,21 +286,6 @@ export default function AdminLotsPage() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 mt-8 space-y-8">
         
-        {error && (
-          <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center justify-between shadow-sm">
-            <span className="font-medium text-sm">{error}</span>
-            <button 
-              onClick={() => setError('')} 
-              className="p-1 rounded-md hover:bg-red-100 transition-colors"
-              aria-label="Dismiss error"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           
           {/* Parking Lots Management */}
@@ -429,6 +444,61 @@ export default function AdminLotsPage() {
 
         </div>
       </main>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed bottom-6 right-6 z-[9999] animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className={`relative overflow-hidden rounded-xl border p-4 shadow-lg min-w-[280px] max-w-sm ${
+            toast.type === 'error'
+              ? 'bg-red-50 dark:bg-red-950/90 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
+              : 'bg-green-50 dark:bg-green-950/90 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+          }`}>
+            <div className="flex items-start gap-3">
+              {toast.type === 'error' ? (
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              )}
+              <div className="flex-1 text-sm font-medium pr-4">
+                {toast.message}
+              </div>
+              <button 
+                onClick={() => setToast(prev => ({ ...prev, show: false }))}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Loading/Progress Bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50 dark:bg-zinc-800/50">
+              <div 
+                className={`h-full animate-toast-progress ${
+                  toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'
+                }`}
+                style={{ animationDuration: '2000ms' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes toast-progress {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        .animate-toast-progress {
+          animation-name: toast-progress;
+          animation-timing-function: linear;
+          animation-fill-mode: forwards;
+        }
+      ` }} />
     </div>
   );
 }

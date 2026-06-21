@@ -58,12 +58,15 @@ export async function POST(request) {
       );
     }
 
+    const userAgent = request.headers.get('user-agent');
+
     const result = await registerUser({
       email,
       password,
       fullName: full_name,
       pupId: pup_id,
       captchaToken,
+      userAgent,
     });
 
     if (result.error) {

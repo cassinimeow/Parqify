@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/auth';
+import { logAdminAction } from '@/lib/audit';
 
 /**
  * GET /api/parking/lots
@@ -45,6 +47,11 @@ export async function GET() {
  */
 export async function POST(request) {
   try {
+    const userResult = await getCurrentUser();
+    if (userResult.error || !userResult.profile?.is_admin) {
+      return NextResponse.json({ error: 'Unauthorized. Admin privileges required.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { name, total_slots } = body;
     const supabase = await getSupabase();
@@ -81,6 +88,16 @@ export async function POST(request) {
       await supabase.from('parking_slots').insert(slotsToInsert);
     }
 
+    // Log the audit event
+    await logAdminAction(
+      supabase,
+      userResult.user.id,
+      'ADD_PARKING_LOT',
+      'LOT',
+      data.id,
+      `Admin "${userResult.profile.full_name}" created parking lot "${name}" with ${total_slots} slots.`
+    );
+
     return NextResponse.json({ lot: data }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -93,16 +110,41 @@ export async function POST(request) {
  */
 export async function DELETE(request) {
   try {
+    const userResult = await getCurrentUser();
+    if (userResult.error || !userResult.profile?.is_admin) {
+      return NextResponse.json({ error: 'Unauthorized. Admin privileges required.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { id } = body;
     if (!id) return NextResponse.json({ error: 'Lot ID is required' }, { status: 400 });
 
     const supabase = await getSupabase();
+
+    // Fetch lot name before deletion for audit logging details
+    const { data: lotData } = await supabase
+      .from('parking_lots')
+      .select('name')
+      .eq('id', id)
+      .single();
+
+    const lotName = lotData ? lotData.name : 'Unknown';
+
     const { error } = await supabase.from('parking_lots').delete().eq('id', id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Log the audit event
+    await logAdminAction(
+      supabase,
+      userResult.user.id,
+      'DELETE_PARKING_LOT',
+      'LOT',
+      id,
+      `Admin "${userResult.profile.full_name}" deleted parking lot "${lotName}".`
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

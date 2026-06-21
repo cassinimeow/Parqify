@@ -15,12 +15,13 @@ export default function AdminManagementPage() {
   const [profile, setProfile] = useState(null);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  // Tab State: 'users' | 'tickets'
+  // Tab State: 'users' | 'tickets' | 'audit_logs'
   const [activeTab, setActiveTab] = useState('users');
 
   // Data States
   const [users, setUsers] = useState([]);
   const [tickets, setTickets] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Search & Filter States
@@ -28,11 +29,40 @@ export default function AdminManagementPage() {
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [ticketSearch, setTicketSearch] = useState('');
   const [ticketStatusFilter, setTicketStatusFilter] = useState('ALL');
+  
+  // Audit Search & Filter States
+  const [auditSearch, setAuditSearch] = useState('');
+  const [auditActionFilter, setAuditActionFilter] = useState('ALL');
 
   // Modals & Action States (Super Admin Only)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Toast Notification State
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success', id: 0 });
+
+  useEffect(() => {
+    if (successMessage) {
+      setToast({ show: true, message: successMessage, type: 'success', id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setSuccessMessage('');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (error) {
+      setToast({ show: true, message: error, type: 'error', id: Date.now() });
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+        setError('');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // User Role Modal
   const [selectedUser, setSelectedUser] = useState(null);
@@ -78,9 +108,10 @@ export default function AdminManagementPage() {
     setIsLoadingData(true);
     setError('');
     try {
-      const [usersRes, ticketsRes] = await Promise.all([
+      const [usersRes, ticketsRes, auditLogsRes] = await Promise.all([
         fetch('/api/admin/users'),
-        fetch('/api/admin/tickets')
+        fetch('/api/admin/tickets'),
+        fetch('/api/admin/audit-logs')
       ]);
 
       if (usersRes.ok) {
@@ -91,12 +122,35 @@ export default function AdminManagementPage() {
         const ticketsData = await ticketsRes.json();
         setTickets(ticketsData.tickets || []);
       }
+      if (auditLogsRes.ok) {
+        const auditLogsData = await auditLogsRes.json();
+        setAuditLogs(auditLogsData.auditLogs || []);
+      }
     } catch (err) {
       setError('Failed to fetch admin data.');
     } finally {
       setIsLoadingData(false);
     }
   }
+
+  // Client-side actions logger
+  const logClientAction = async (action, targetType, targetId, details) => {
+    try {
+      await fetch('/api/admin/audit-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, target_type: targetType, target_id: targetId, details })
+      });
+      // Silent refresh of audit logs
+      const auditRes = await fetch('/api/admin/audit-logs');
+      if (auditRes.ok) {
+        const auditData = await auditRes.json();
+        setAuditLogs(auditData.auditLogs || []);
+      }
+    } catch (err) {
+      console.error('Failed to log client-side admin action:', err);
+    }
+  };
 
   // Handle User Privilege Edit (Super Admin Only)
   async function handleUpdateRole(e) {
@@ -289,6 +343,7 @@ export default function AdminManagementPage() {
       ];
     });
     downloadCSV(headers, rows, `parqify_users_${new Date().toISOString().split('T')[0]}.csv`);
+    logClientAction('EXPORT_CSV', 'REPORT', 'USERS', `Admin "${profile?.full_name}" exported users list to CSV.`);
   };
 
   const exportTicketsCSV = () => {
@@ -317,11 +372,50 @@ export default function AdminManagementPage() {
       ];
     });
     downloadCSV(headers, rows, `parqify_tickets_${new Date().toISOString().split('T')[0]}.csv`);
+    logClientAction('EXPORT_CSV', 'REPORT', 'TICKETS', `Admin "${profile?.full_name}" exported tickets list to CSV.`);
+  };
+
+  const exportAuditCSV = () => {
+    const headers = ['Timestamp', 'Actor Name', 'Actor Role', 'Action', 'Target Type', 'Target ID', 'Details'];
+    const rows = filteredAuditLogs.map(log => {
+      const actor = log.users || {};
+      const actorRole = actor.is_super_admin ? 'Super Admin' : actor.is_admin ? 'Admin' : 'Unknown';
+      return [
+        new Date(log.created_at).toLocaleString(),
+        actor.full_name || 'System / Unknown',
+        actorRole,
+        log.action || '',
+        log.target_type || '',
+        log.target_id || '',
+        log.details || ''
+      ];
+    });
+    downloadCSV(headers, rows, `parqify_audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    logClientAction('EXPORT_CSV', 'REPORT', 'AUDIT_LOGS', `Admin "${profile?.full_name}" exported admin audit logs to CSV.`);
   };
 
   const handlePrint = () => {
+    logClientAction('PRINT_PDF', 'REPORT', activeTab.toUpperCase(), `Admin "${profile?.full_name}" triggered browser print for ${activeTab} tab.`);
     window.print();
   };
+
+  const filteredAuditLogs = auditLogs.filter(log => {
+    const search = auditSearch.toLowerCase();
+    const actorName = (log.users?.full_name || '').toLowerCase();
+    const action = (log.action || '').toLowerCase();
+    const details = (log.details || '').toLowerCase();
+    const targetType = (log.target_type || '').toLowerCase();
+
+    const matchesSearch = 
+      actorName.includes(search) || 
+      action.includes(search) || 
+      details.includes(search) || 
+      targetType.includes(search);
+
+    const matchesAction = auditActionFilter === 'ALL' || log.action === auditActionFilter;
+
+    return matchesSearch && matchesAction;
+  });
 
   if (isVerifying) {
     return <LoadingScreen message="Verifying Admin Access..." />;
@@ -425,6 +519,16 @@ export default function AdminManagementPage() {
             font-size: 10px !important;
           }
         }
+
+        @keyframes toast-progress {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        .animate-toast-progress {
+          animation-name: toast-progress;
+          animation-timing-function: linear;
+          animation-fill-mode: forwards;
+        }
       ` }} />
 
       {/* Navbar Header */}
@@ -450,7 +554,7 @@ export default function AdminManagementPage() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
               profile?.is_super_admin 
                 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' 
@@ -458,6 +562,23 @@ export default function AdminManagementPage() {
             }`}>
               {profile?.is_super_admin ? 'Super Admin Access' : 'Admin Access (Read-Only)'}
             </span>
+
+            <div className="h-6 w-px bg-gray-200 dark:bg-zinc-800 hidden sm:block"></div>
+
+            <div className="flex items-center gap-2.5 hidden sm:flex">
+              <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+                {profile?.full_name}
+              </span>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200 dark:border-white/10 object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-brand-maroon-50 dark:bg-zinc-800 flex items-center justify-center border border-brand-maroon-100 dark:border-white/10">
+                  <span className="text-xs font-bold text-brand-maroon-800 dark:text-zinc-400">
+                    {(profile?.full_name || 'U').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -465,19 +586,7 @@ export default function AdminManagementPage() {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6 print-container">
         
-        {/* Status Alerts */}
-        <div className="no-print space-y-2">
-          {error && (
-            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-          {successMessage && (
-            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400 text-sm">
-              {successMessage}
-            </div>
-          )}
-        </div>
+        {/* Toast notifications replace the static alerts */}
 
         {/* Tab Controls */}
         <div className="flex bg-gray-100 dark:bg-zinc-900 p-1 rounded-xl w-fit no-print">
@@ -502,6 +611,17 @@ export default function AdminManagementPage() {
             }`}
           >
             Tickets ({filteredTickets.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('audit_logs')}
+            className={`px-6 py-2 text-sm font-semibold rounded-lg transition-colors ${
+              activeTab === 'audit_logs'
+                ? 'bg-white dark:bg-zinc-800 text-brand-maroon-800 dark:text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+            }`}
+          >
+            Audit Logs ({filteredAuditLogs.length})
           </button>
         </div>
 
@@ -823,6 +943,129 @@ export default function AdminManagementPage() {
               </div>
             )}
 
+            {/* TAB 3: AUDIT LOGS */}
+            {activeTab === 'audit_logs' && (
+              <div className="card-content-print">
+                {/* Print-Only Header */}
+                <div className="hidden print:block mb-6 border-b-2 border-brand-maroon-800 pb-3">
+                  <h2 className="text-xl font-bold text-gray-900">Parqify - Admin Privilege Audit Logs</h2>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Generated on {new Date().toLocaleString()} by {profile?.full_name} ({profile?.email}) | Total Records: {filteredAuditLogs.length}
+                  </p>
+                </div>
+
+                {/* Search Header */}
+                <div className="p-4 bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+                  <div className="w-full sm:max-w-md">
+                    <Input
+                      id="auditSearch"
+                      placeholder="Search audit logs by actor, action, details..."
+                      value={auditSearch}
+                      onChange={(e) => setAuditSearch(e.target.value)}
+                      icon={
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <select
+                      value={auditActionFilter}
+                      onChange={(e) => setAuditActionFilter(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-maroon-800"
+                    >
+                      <option value="ALL">All Actions</option>
+                      <option value="ADD_PARKING_LOT">Add Parking Lot</option>
+                      <option value="DELETE_PARKING_LOT">Delete Parking Lot</option>
+                      <option value="ADD_PARKING_SLOT">Add Parking Slot</option>
+                      <option value="DELETE_PARKING_SLOT">Delete Parking Slot</option>
+                      <option value="UPDATE_PARKING_SLOT">Update Parking Slot</option>
+                      <option value="UPDATE_USER_ROLE">Update User Role</option>
+                      <option value="DELETE_USER">Delete User</option>
+                      <option value="OVERRIDE_TICKET">Override Ticket</option>
+                      <option value="DELETE_TICKET">Delete Ticket</option>
+                      <option value="EXPORT_CSV">Export CSV</option>
+                      <option value="PRINT_PDF">Print PDF</option>
+                    </select>
+                    <button
+                      onClick={exportAuditCSV}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                      title="Export filtered audit logs as CSV"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                      <span>Export CSV</span>
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-700 dark:text-zinc-300 transition-colors"
+                      title="Print or Export PDF"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2Zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10Z" />
+                      </svg>
+                      <span>Print / PDF</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  {filteredAuditLogs.length > 0 ? (
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/10 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                          <th className="py-4 px-6">Timestamp</th>
+                          <th className="py-4 px-6">Actor</th>
+                          <th className="py-4 px-6">Action</th>
+                          <th className="py-4 px-6">Target</th>
+                          <th className="py-4 px-6">Details</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
+                        {filteredAuditLogs.map(log => {
+                          const actor = log.users || {};
+                          const actorRole = actor.is_super_admin ? 'Super Admin' : actor.is_admin ? 'Admin' : 'Unknown';
+                          return (
+                            <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                              <td className="py-4 px-6 text-xs text-gray-500 dark:text-zinc-400 font-mono whitespace-nowrap">
+                                {new Date(log.created_at).toLocaleString()}
+                              </td>
+                              <td className="py-4 px-6">
+                                <div className="font-semibold text-gray-900 dark:text-white">{actor.full_name || 'System / Unknown'}</div>
+                                <div className="text-xs text-gray-500 dark:text-zinc-400">{actorRole}</div>
+                              </td>
+                              <td className="py-4 px-6">
+                                <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                  log.action?.startsWith('ADD') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                  log.action?.startsWith('DELETE') ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                  log.action?.startsWith('UPDATE') || log.action?.includes('ROLE') ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                  log.action?.includes('OVERRIDE') ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                                  'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
+                                }`}>
+                                  {log.action?.replace(/_/g, ' ')}
+                                </span>
+                              </td>
+                              <td className="py-4 px-6 font-mono text-xs text-gray-900 dark:text-white">
+                                <div className="font-medium text-gray-950 dark:text-gray-200">{log.target_type}</div>
+                                {log.target_id && <div className="text-xs text-gray-500 dark:text-zinc-400 font-mono">{log.target_id.substring(0, 8).toUpperCase()}</div>}
+                              </td>
+                              <td className="py-4 px-6 text-xs text-gray-600 dark:text-zinc-400 max-w-xs break-words">
+                                {log.details}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-12 text-center text-gray-500">No audit logs found matching filters.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </CardContent>
         </Card>
       </main>
@@ -962,6 +1205,49 @@ export default function AdminManagementPage() {
               <Button type="button" variant="primary" className="!bg-red-600 hover:!bg-red-700 text-white" isLoading={isSubmitting} onClick={handleDeleteTicket}>
                 Confirm Delete
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed bottom-6 right-6 z-[9999] animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className={`relative overflow-hidden rounded-xl border p-4 shadow-lg min-w-[280px] max-w-sm ${
+            toast.type === 'error'
+              ? 'bg-red-50 dark:bg-red-950/90 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
+              : 'bg-green-50 dark:bg-green-950/90 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+          }`}>
+            <div className="flex items-start gap-3">
+              {toast.type === 'error' ? (
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              )}
+              <div className="flex-1 text-sm font-medium pr-4">
+                {toast.message}
+              </div>
+              <button 
+                onClick={() => setToast(prev => ({ ...prev, show: false }))}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Loading/Progress Bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50 dark:bg-zinc-800/50">
+              <div 
+                className={`h-full animate-toast-progress ${
+                  toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'
+                }`}
+                style={{ animationDuration: '2000ms' }}
+              />
             </div>
           </div>
         </div>

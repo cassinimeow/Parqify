@@ -10,6 +10,8 @@ export async function POST(request) {
     const body = await request.json();
     const { email, password, captchaToken } = body;
 
+    const userAgent = request.headers.get('user-agent');
+
     // Validate required fields
     if (!email || !password) {
       return NextResponse.json(
@@ -18,7 +20,7 @@ export async function POST(request) {
       );
     }
 
-    const result = await loginUser({ email, password, captchaToken });
+    const result = await loginUser({ email, password, captchaToken, userAgent });
 
     if (result.error) {
       return NextResponse.json(
