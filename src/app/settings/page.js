@@ -48,11 +48,61 @@ export default function SettingsPage() {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpCode, setOtpCode] = useState('');
 
+  const [validationErrors, setValidationErrors] = useState({});
+
   // UI States
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
   const [securityMessage, setSecurityMessage] = useState({ type: '', text: '' });
+
+  const handleBlur = (fieldName) => {
+    const errors = { ...validationErrors };
+    
+    if (fieldName === 'full_name') {
+      if (!fullName) {
+        errors.full_name = 'Full name is required';
+      } else {
+        const nameRegex = /^[a-zA-ZñÑ\s.\-]+$/;
+        if (!nameRegex.test(fullName)) {
+          errors.full_name = 'Full name cannot contain numbers or special characters';
+        } else {
+          delete errors.full_name;
+        }
+      }
+    }
+    
+    if (fieldName === 'password') {
+      if (isChangingPassword) {
+        if (!password) {
+          errors.password = 'Password is required';
+        } else {
+          const passwordErr = validatePasswordStrength(password, {
+            email: user?.email || '',
+            fullName: fullName || '',
+            pupId: profile?.pup_id || ''
+          });
+          if (passwordErr) {
+            errors.password = passwordErr;
+          } else {
+            delete errors.password;
+          }
+        }
+      }
+    }
+    
+    if (fieldName === 'confirm_password') {
+      if (isChangingPassword) {
+        if (password !== confirmPassword) {
+          errors.confirm_password = 'New passwords do not match';
+        } else {
+          delete errors.confirm_password;
+        }
+      }
+    }
+    
+    setValidationErrors(errors);
+  };
 
   useEffect(() => {
     async function fetchUser() {
@@ -350,12 +400,21 @@ export default function SettingsPage() {
                 id="full_name"
                 label="Full Name"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value.replace(/[^a-zA-ZñÑ\s.\-]/g, ''))}
+                onChange={(e) => {
+                  setFullName(e.target.value.replace(/[^a-zA-ZñÑ\s.\-]/g, ''));
+                  setValidationErrors(prev => {
+                    const copy = { ...prev };
+                    delete copy.full_name;
+                    return copy;
+                  });
+                }}
                 onBlur={() => {
+                  handleBlur('full_name');
                   if (!fullName || fullName.trim() === '') {
                     setFullName(profile?.full_name || '');
                   }
                 }}
+                error={validationErrors.full_name}
                 disabled={isGuest}
                 required
               />
@@ -458,7 +517,16 @@ export default function SettingsPage() {
                     label="New Password"
                     placeholder="Enter your new password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setValidationErrors(prev => {
+                        const copy = { ...prev };
+                        delete copy.password;
+                        return copy;
+                      });
+                    }}
+                    onBlur={() => handleBlur('password')}
+                    error={validationErrors.password}
                     disabled={isGuest || showOtpInput}
                     helperText="Must be at least 8 characters with mixed case, numbers, & symbols."
                     required
@@ -482,7 +550,16 @@ export default function SettingsPage() {
                     label="Confirm New Password"
                     placeholder="Re-type your new password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setValidationErrors(prev => {
+                        const copy = { ...prev };
+                        delete copy.confirm_password;
+                        return copy;
+                      });
+                    }}
+                    onBlur={() => handleBlur('confirm_password')}
+                    error={validationErrors.confirm_password}
                     disabled={isGuest || showOtpInput}
                     required
                     rightIcon={

@@ -10,7 +10,7 @@ export default function AccessibilityWidget() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
     // Load saved font scale on mount
     const savedScale = localStorage.getItem('accessibility_font_scale');
     if (savedScale) {
@@ -18,6 +18,7 @@ export default function AccessibilityWidget() {
       setFontSizeScale(scale);
       document.documentElement.style.fontSize = `${(scale / 100) * 16}px`;
     }
+    return () => clearTimeout(timer);
   }, []);
 
   if (!mounted) return null;

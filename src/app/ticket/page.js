@@ -251,7 +251,7 @@ export default function DigitalTicket() {
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center relative z-10">
           <Car className="w-16 h-16 text-gray-400 dark:text-zinc-600 mb-4" />
           <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">No Active Parking</h2>
-          <p className="text-gray-500 dark:text-zinc-400 mt-2">You don't have an active parking session.</p>
+          <p className="text-gray-500 dark:text-zinc-400 mt-2">You don&apos;t have an active parking session.</p>
           <button 
             onClick={() => router.push('/parking')}
             className="mt-6 px-6 py-2 bg-brand-maroon-800 dark:bg-brand-maroon-700 text-white rounded-lg hover:bg-brand-maroon-900 transition-colors shadow-md active:scale-95 font-semibold"

@@ -11,7 +11,7 @@ export default function IdleDetector() {
   const router = useRouter();
   const timeoutTimerRef = useRef(null);
   const pingTimerRef = useRef(null);
-  const lastActivityRef = useRef(Date.now());
+  const lastActivityRef = useRef(0);
   const hasBeenActiveSincePingRef = useRef(false);
 
   // Protected paths where auto-logout should apply

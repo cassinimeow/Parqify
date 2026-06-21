@@ -96,7 +96,14 @@ export async function POST(request) {
         .update({ status: 'AVAILABLE' })
         .eq('id', slot_id);
         
-      return NextResponse.json({ error: 'Failed to generate ticket' }, { status: 500 });
+      if (ticketError.code === '23505') {
+        return NextResponse.json(
+          { error: 'You already have an active parking session.' },
+          { status: 400 }
+        );
+      }
+        
+      return NextResponse.json({ error: ticketError.message || 'Failed to generate ticket' }, { status: 500 });
     }
 
     return NextResponse.json({

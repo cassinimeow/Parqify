@@ -39,11 +39,17 @@ CREATE TABLE IF NOT EXISTS public.tickets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
     slot_id UUID REFERENCES public.parking_slots(id) ON DELETE SET NULL,
-    entry_time TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    entry_time TIMESTAMP WITH TIME ZONE,
     exit_time TIMESTAMP WITH TIME ZONE,
-    status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'COMPLETED')),
+    status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('RESERVED', 'ACTIVE', 'COMPLETED', 'EXPIRED', 'OVERRIDDEN')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Create partial unique index to enforce at most one active (RESERVED or ACTIVE) ticket per user
+CREATE UNIQUE INDEX IF NOT EXISTS unique_active_ticket_per_user 
+ON public.tickets (user_id) 
+WHERE (status IN ('RESERVED', 'ACTIVE'));
+
 
 -- ----------------------------------------------------
 -- Row Level Security (RLS) Settings (Optional/Recommended for Production)
