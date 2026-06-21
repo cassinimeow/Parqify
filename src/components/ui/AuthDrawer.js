@@ -430,7 +430,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
                 value={form.password}
                 onChange={handleChange}
                 required
-                helperText={isSignUp ? 'Must be at least 6 characters' : undefined}
+                helperText={isSignUp ? 'Must be at least 8 characters with mixed case, numbers, & symbols' : undefined}
                 icon={
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />

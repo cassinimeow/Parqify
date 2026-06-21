@@ -460,7 +460,7 @@ export default function SettingsPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isGuest || showOtpInput}
-                    helperText="Must be at least 6 characters."
+                    helperText="Must be at least 8 characters with mixed case, numbers, & symbols."
                     required
                     rightIcon={
                       <button 
