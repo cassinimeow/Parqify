@@ -117,13 +117,20 @@ export async function DELETE(request) {
       .single();
     const targetName = targetUser ? targetUser.full_name : 'Unknown';
 
-    const { error } = await supabase
+    const { data: deletedUsers, error } = await supabase
       .from('users')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (!deletedUsers || deletedUsers.length === 0) {
+      return NextResponse.json({
+        error: 'Delete failed. The user does not exist or you do not have permission to delete this profile.'
+      }, { status: 400 });
     }
 
     // Log the audit event

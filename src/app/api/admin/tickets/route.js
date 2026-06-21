@@ -198,13 +198,20 @@ export async function DELETE(request) {
     }
 
     // 3. Delete the ticket
-    const { error } = await supabase
+    const { data: deletedTickets, error } = await supabase
       .from('tickets')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (!deletedTickets || deletedTickets.length === 0) {
+      return NextResponse.json({ 
+        error: 'Delete failed. The ticket does not exist or you do not have permission to delete it. Please ensure RLS permissions allow deletion.' 
+      }, { status: 400 });
     }
 
     // Log the audit event

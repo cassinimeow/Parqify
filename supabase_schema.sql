@@ -76,6 +76,7 @@ CREATE POLICY "Allow public delete slots" ON public.parking_slots FOR DELETE USI
 CREATE POLICY "Allow public read tickets" ON public.tickets FOR SELECT USING (true);
 CREATE POLICY "Allow public insert tickets" ON public.tickets FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update tickets" ON public.tickets FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete tickets" ON public.tickets FOR DELETE USING (true);
 
 -- ----------------------------------------------------
 -- 5. STORAGE BUCKETS
