@@ -145,3 +145,6 @@ export async function getCurrentUser() {
     profile: profileError ? null : profile,
   };
 }
+
+export { validatePasswordStrength } from './validation';
+

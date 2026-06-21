@@ -129,7 +129,7 @@ export default function DigitalTicket() {
   }, [ticket?.id]);
 
   const handleSimulateScan = async () => {
-    if (!ticket) return;
+    if (!ticket || scanLoading) return;
     setScanLoading(true);
     
     try {
@@ -160,7 +160,7 @@ export default function DigitalTicket() {
   };
 
   const handleCheckout = async () => {
-    if (!ticket) return;
+    if (!ticket || checkoutLoading) return;
     setCheckoutLoading(true);
     
     try {

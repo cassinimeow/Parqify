@@ -169,7 +169,7 @@ export default function ParkingPage() {
 
   // Book parking slot
   async function handleBookSlot() {
-    if (!selectedLot || !selectedSlot) return;
+    if (!selectedLot || !selectedSlot || isBooking) return;
     setIsBooking(true);
     setError('');
     try {

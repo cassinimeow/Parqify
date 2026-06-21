@@ -101,7 +101,7 @@ export default function AdminManagementPage() {
   // Handle User Privilege Edit (Super Admin Only)
   async function handleUpdateRole(e) {
     e.preventDefault();
-    if (!selectedUser || !profile?.is_super_admin) return;
+    if (isSubmitting || !selectedUser || !profile?.is_super_admin) return;
 
     setIsSubmitting(true);
     setError('');
@@ -134,7 +134,7 @@ export default function AdminManagementPage() {
 
   // Handle User Delete (Super Admin Only)
   async function handleDeleteUser() {
-    if (!userToDelete || !profile?.is_super_admin) return;
+    if (isSubmitting || !userToDelete || !profile?.is_super_admin) return;
 
     setIsSubmitting(true);
     setError('');
@@ -163,7 +163,7 @@ export default function AdminManagementPage() {
   // Handle Ticket Status Override (Super Admin Only)
   async function handleUpdateTicket(e) {
     e.preventDefault();
-    if (!selectedTicket || !profile?.is_super_admin) return;
+    if (isSubmitting || !selectedTicket || !profile?.is_super_admin) return;
 
     setIsSubmitting(true);
     setError('');
@@ -195,7 +195,7 @@ export default function AdminManagementPage() {
 
   // Handle Ticket Delete (Super Admin Only)
   async function handleDeleteTicket() {
-    if (!ticketToDelete || !profile?.is_super_admin) return;
+    if (isSubmitting || !ticketToDelete || !profile?.is_super_admin) return;
 
     setIsSubmitting(true);
     setError('');

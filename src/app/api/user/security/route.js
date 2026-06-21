@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, validatePasswordStrength } from '@/lib/auth';
 
 /**
  * POST /api/user/security
@@ -11,7 +11,7 @@ export async function POST(request) {
   try {
     const { email, password, nonce, currentPassword } = await request.json();
 
-    const { user, error: authError } = await getCurrentUser();
+    const { user, profile, error: authError } = await getCurrentUser();
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,6 +22,15 @@ export async function POST(request) {
     const updates = {};
     if (email) updates.email = email;
     if (password) {
+      const passwordValidationError = validatePasswordStrength(password, {
+        email: user.email,
+        fullName: profile?.full_name || '',
+        pupId: profile?.pup_id || ''
+      });
+      if (passwordValidationError) {
+        return NextResponse.json({ error: passwordValidationError }, { status: 400 });
+      }
+
       updates.password = password;
       if (currentPassword) {
         updates.current_password = currentPassword;

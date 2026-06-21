@@ -8,6 +8,7 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { createClient } from '@supabase/supabase-js';
+import { validatePasswordStrength } from '@/lib/validation';
 
 // Initialize Supabase client for storage upload
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -82,14 +83,30 @@ export default function SettingsPage() {
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      
+      // Enforce file size limit (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setProfileMessage({ type: 'error', text: 'Avatar image must be smaller than 5 MB.' });
+        return;
+      }
+      
+      // Enforce image MIME types (JPEG, PNG, WebP)
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        setProfileMessage({ type: 'error', text: 'Invalid image format. Only JPEG, PNG, and WebP are allowed.' });
+        return;
+      }
+
       setAvatarFile(file);
       // Create a local preview
       setAvatarUrl(URL.createObjectURL(file));
+      setProfileMessage({ type: '', text: '' });
     }
   };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    if (isSavingProfile) return;
     setIsSavingProfile(true);
     setProfileMessage({ type: '', text: '' });
 
@@ -135,10 +152,24 @@ export default function SettingsPage() {
 
   const handleSecuritySubmit = async (e) => {
     e.preventDefault();
+    if (isSavingSecurity) return;
     setIsSavingSecurity(true);
     setSecurityMessage({ type: '', text: '' });
 
     try {
+      if (isChangingPassword && password) {
+        const passwordValidationError = validatePasswordStrength(password, {
+          email: user?.email || '',
+          fullName: profile?.full_name || '',
+          pupId: profile?.pup_id || ''
+        });
+        if (passwordValidationError) {
+          setSecurityMessage({ type: 'error', text: passwordValidationError });
+          setIsSavingSecurity(false);
+          return;
+        }
+      }
+
       if (password && password !== confirmPassword) {
         setSecurityMessage({ type: 'error', text: 'New passwords do not match.' });
         setIsSavingSecurity(false);

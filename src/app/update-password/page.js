@@ -6,6 +6,7 @@ import { useTheme } from 'next-themes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { validatePasswordStrength } from '@/lib/validation';
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -16,9 +17,25 @@ export default function UpdatePasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { setTheme } = useTheme();
 
-  // Force light theme
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  // Force light theme and fetch user context
   useEffect(() => {
     setTheme('light');
+    async function fetchUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+          setProfile(data.profile);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user context:', err);
+      }
+    }
+    fetchUser();
   }, [setTheme]);
 
   const [form, setForm] = useState({
@@ -34,6 +51,7 @@ export default function UpdatePasswordPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     setError('');
     setSuccess('');
@@ -44,8 +62,14 @@ export default function UpdatePasswordPage() {
       return;
     }
 
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    const passwordValidationError = validatePasswordStrength(form.password, {
+      email: user?.email || '',
+      fullName: profile?.full_name || '',
+      pupId: profile?.pup_id || ''
+    });
+
+    if (passwordValidationError) {
+      setError(passwordValidationError);
       setIsLoading(false);
       return;
     }

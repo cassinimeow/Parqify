@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { registerUser } from '@/lib/auth';
+import { registerUser, validatePasswordStrength } from '@/lib/auth';
 
 /**
  * POST /api/auth/register
@@ -27,10 +27,15 @@ export async function POST(request) {
       );
     }
 
-    // Validate password length
-    if (password.length < 6) {
+    // Validate password complexity
+    const passwordValidationError = validatePasswordStrength(password, { 
+      email, 
+      fullName: full_name, 
+      pupId: pup_id 
+    });
+    if (passwordValidationError) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: passwordValidationError },
         { status: 400 }
       );
     }

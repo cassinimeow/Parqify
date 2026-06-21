@@ -6,6 +6,7 @@ import { X, Code } from 'lucide-react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { validatePasswordStrength } from '@/lib/validation';
 
 export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   const router = useRouter();
@@ -115,6 +116,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     setError('');
     setSuccess('');
@@ -149,6 +151,19 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
         setError('Passwords do not match');
         setIsLoading(false);
         return;
+      }
+
+      if (isSignUp) {
+        const passwordValidationError = validatePasswordStrength(form.password, {
+          email: form.email,
+          fullName: form.full_name,
+          pupId: form.pup_id
+        });
+        if (passwordValidationError) {
+          setError(passwordValidationError);
+          setIsLoading(false);
+          return;
+        }
       }
 
       const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
@@ -188,6 +203,7 @@ export default function AuthDrawer({ isOpen, onClose, initialMode = 'login' }) {
   }
 
   async function handleGuestLogin() {
+    if (isGuestLoading) return;
     if (!captchaToken) {
       setError('Please complete the Captcha verification first to continue as visitor.');
       return;
