@@ -342,7 +342,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Profile Picture</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">JPG, GIF or PNG. 1MB max.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">JPG, PNG or WEBP. 5MB max.</p>
                 </div>
               </div>
 
