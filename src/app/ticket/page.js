@@ -6,11 +6,7 @@ import { MapPin, Clock, Car, CheckCircle, ChevronLeft, Ticket as TicketIcon } fr
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import Button from '@/components/ui/Button';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+import { supabase } from '@/lib/supabase-client';
 
 export default function DigitalTicket() {
   const [user, setUser] = useState(null);

@@ -7,13 +7,8 @@ import Button from '@/components/ui/Button';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase-client';
 import { validatePasswordStrength } from '@/lib/validation';
-
-// Initialize Supabase client for storage upload
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 const CheckIcon = () => (
   <div className="w-4 h-4 rounded bg-emerald-500 flex items-center justify-center shrink-0">
