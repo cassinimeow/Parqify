@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { logAdminAction } from '@/lib/audit';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * GET /api/admin/users - List all users (Admins & Super Admins)
@@ -96,10 +97,14 @@ export async function DELETE(request) {
     }
 
     const body = await request.json();
-    const { id } = body;
+    const { id, password, captchaToken } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    if (!password) {
+      return NextResponse.json({ error: 'Confirm password is required to verify your identity.' }, { status: 400 });
     }
 
     // Prevent deleting oneself
@@ -108,6 +113,30 @@ export async function DELETE(request) {
     }
 
     const supabase = await getSupabase();
+
+    // Verify the Super Admin password using a stateless client to prevent session/cookie updates
+    const verifyClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      }
+    );
+
+    const { error: verifyError } = await verifyClient.auth.signInWithPassword({
+      email: userResult.user.email,
+      password: password,
+      options: {
+        captchaToken
+      }
+    });
+
+    if (verifyError) {
+      return NextResponse.json({ error: 'Incorrect password. Identity verification failed.' }, { status: 401 });
+    }
     
     // Fetch user details before deleting for logging
     const { data: targetUser } = await supabase
@@ -117,17 +146,14 @@ export async function DELETE(request) {
       .single();
     const targetName = targetUser ? targetUser.full_name : 'Unknown';
 
-    const { data: deletedUsers, error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', id)
-      .select();
+    const { data: wasDeleted, error } = await supabase
+      .rpc('delete_user_by_id', { target_user_id: id });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    if (!deletedUsers || deletedUsers.length === 0) {
+    if (!wasDeleted) {
       return NextResponse.json({
         error: 'Delete failed. The user does not exist or you do not have permission to delete this profile.'
       }, { status: 400 });

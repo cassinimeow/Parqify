@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
 import { logAdminAction } from '@/lib/audit';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * GET /api/admin/tickets - List all tickets (Admins & Super Admins)
@@ -165,13 +166,41 @@ export async function DELETE(request) {
     }
 
     const body = await request.json();
-    const { id } = body;
+    const { id, password, captchaToken } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 });
     }
 
+    if (!password) {
+      return NextResponse.json({ error: 'Confirm password is required to verify your identity.' }, { status: 400 });
+    }
+
     const supabase = await getSupabase();
+
+    // Verify the Super Admin password using a stateless client to prevent session/cookie updates
+    const verifyClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      }
+    );
+
+    const { error: verifyError } = await verifyClient.auth.signInWithPassword({
+      email: userResult.user.email,
+      password: password,
+      options: {
+        captchaToken
+      }
+    });
+
+    if (verifyError) {
+      return NextResponse.json({ error: 'Incorrect password. Identity verification failed.' }, { status: 401 });
+    }
 
     // 1. Get the ticket details to find slot_id, status, and names for logging
     const { data: ticket } = await supabase

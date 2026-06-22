@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function AdminManagementPage() {
   const router = useRouter();
@@ -33,6 +34,30 @@ export default function AdminManagementPage() {
   // Audit Search & Filter States
   const [auditSearch, setAuditSearch] = useState('');
   const [auditActionFilter, setAuditActionFilter] = useState('ALL');
+
+  // Pagination & Date Filter States
+  const [usersPage, setUsersPage] = useState(1);
+  const [ticketsPage, setTicketsPage] = useState(1);
+  const [auditLogsPage, setAuditLogsPage] = useState(1);
+
+  const [userDateFilter, setUserDateFilter] = useState('');
+  const [ticketDateFilter, setTicketDateFilter] = useState('');
+  const [auditDateFilter, setAuditDateFilter] = useState('');
+
+  const ITEMS_PER_PAGE = 7;
+
+  // Reset page pagination when filter parameters change
+  useEffect(() => {
+    setUsersPage(1);
+  }, [userSearch, userRoleFilter, userDateFilter]);
+
+  useEffect(() => {
+    setTicketsPage(1);
+  }, [ticketSearch, ticketStatusFilter, ticketDateFilter]);
+
+  useEffect(() => {
+    setAuditLogsPage(1);
+  }, [auditSearch, auditActionFilter, auditDateFilter]);
 
   // Modals & Action States (Super Admin Only)
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,6 +105,19 @@ export default function AdminManagementPage() {
 
   // Ticket Delete Modal
   const [ticketToDelete, setTicketToDelete] = useState(null);
+
+  // Confirm Password & Captcha States for Super Admin Deletions
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
+
+  useEffect(() => {
+    setConfirmPassword('');
+    setShowConfirmPassword(false);
+    setCaptchaToken(null);
+    captchaRef.current?.resetCaptcha();
+  }, [userToDelete, ticketToDelete]);
 
   // Verify Admin Access & Load Info
   useEffect(() => {
@@ -198,7 +236,7 @@ export default function AdminManagementPage() {
       const res = await fetch('/api/admin/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: userToDelete.id })
+        body: JSON.stringify({ id: userToDelete.id, password: confirmPassword, captchaToken })
       });
 
       const data = await res.json();
@@ -259,7 +297,7 @@ export default function AdminManagementPage() {
       const res = await fetch('/api/admin/tickets', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: ticketToDelete.id })
+        body: JSON.stringify({ id: ticketToDelete.id, password: confirmPassword, captchaToken })
       });
 
       const data = await res.json();
@@ -296,7 +334,13 @@ export default function AdminManagementPage() {
       matchesRole = isGuest;
     }
 
-    return matchesSearch && matchesRole;
+    let matchesDate = true;
+    if (userDateFilter) {
+      const uDate = new Date(user.created_at).toISOString().split('T')[0];
+      matchesDate = uDate === userDateFilter;
+    }
+
+    return matchesSearch && matchesRole && matchesDate;
   });
 
   const filteredTickets = tickets.filter(ticket => {
@@ -308,8 +352,27 @@ export default function AdminManagementPage() {
 
     const matchesStatus = ticketStatusFilter === 'ALL' || ticket.status === ticketStatusFilter;
 
-    return matchesSearch && matchesStatus;
+    let matchesDate = true;
+    if (ticketDateFilter) {
+      const tDate = new Date(ticket.created_at).toISOString().split('T')[0];
+      matchesDate = tDate === ticketDateFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
+
+  const totalUsersPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const totalTicketsPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE);
+
+  const paginatedUsers = filteredUsers.slice(
+    (usersPage - 1) * ITEMS_PER_PAGE,
+    usersPage * ITEMS_PER_PAGE
+  );
+
+  const paginatedTickets = filteredTickets.slice(
+    (ticketsPage - 1) * ITEMS_PER_PAGE,
+    ticketsPage * ITEMS_PER_PAGE
+  );
 
   // CSV Export & Print Logic
   const downloadCSV = (headers, rows, filename) => {
@@ -414,8 +477,183 @@ export default function AdminManagementPage() {
 
     const matchesAction = auditActionFilter === 'ALL' || log.action === auditActionFilter;
 
-    return matchesSearch && matchesAction;
+    let matchesDate = true;
+    if (auditDateFilter) {
+      const lDate = new Date(log.created_at).toISOString().split('T')[0];
+      matchesDate = lDate === auditDateFilter;
+    }
+
+    return matchesSearch && matchesAction && matchesDate;
   });
+
+  const totalAuditLogsPages = Math.ceil(filteredAuditLogs.length / ITEMS_PER_PAGE);
+
+  const paginatedAuditLogs = filteredAuditLogs.slice(
+    (auditLogsPage - 1) * ITEMS_PER_PAGE,
+    auditLogsPage * ITEMS_PER_PAGE
+  );
+
+  // Helper function to render a user row (handles print and interactive states)
+  const renderUserRow = (user, isPrint = false) => {
+    const isGuest = user.pup_id?.startsWith('VISITOR-');
+    return (
+      <tr key={user.id} className={`hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors ${isPrint ? '' : 'no-print'}`}>
+        <td className="py-4 px-6 font-semibold text-gray-900 dark:text-white">
+          <div className="flex items-center gap-3">
+            {user.avatar_url ? (
+              <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-brand-maroon-50 dark:bg-zinc-800 text-brand-maroon-800 dark:text-zinc-400 flex items-center justify-center text-xs font-bold shrink-0">
+                {user.full_name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span>{user.full_name}</span>
+          </div>
+        </td>
+        <td className="py-4 px-6 font-mono text-xs text-gray-600 dark:text-zinc-400">{user.pup_id}</td>
+        <td className="py-4 px-6 text-gray-500 dark:text-zinc-400">{user.email || '—'}</td>
+        <td className="py-4 px-6 font-mono text-xs text-gray-500 dark:text-zinc-400">{user.rfid_tag || 'Not Bound'}</td>
+        <td className="py-4 px-6">
+          <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+            isGuest ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' :
+            user.is_super_admin ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+            user.is_admin ? 'bg-brand-maroon-100 text-brand-maroon-800 dark:bg-brand-maroon-900/30 dark:text-brand-maroon-400' :
+            'bg-brand-gold-100 text-brand-gold-800 dark:bg-brand-gold-900/30 dark:text-brand-gold-400'
+          }`}>
+            {isGuest ? 'Guest' : user.is_super_admin ? 'Super Admin' : user.is_admin ? 'Admin' : 'User'}
+          </span>
+        </td>
+        {profile?.is_super_admin && !isPrint && (
+          <td className="py-4 px-6 text-right no-print">
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setSelectedUser(user);
+                  setAdminFlag(user.is_admin);
+                  setSuperAdminFlag(user.is_super_admin);
+                  setIsRoleModalOpen(true);
+                }}
+                className="p-1 text-gray-400 hover:text-brand-maroon-800 dark:hover:text-white transition-colors"
+                title="Edit privileges"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setUserToDelete(user)}
+                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                title="Delete profile"
+                disabled={user.id === profile.id}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        )}
+      </tr>
+    );
+  };
+
+  // Helper function to render a ticket row (handles print and interactive states)
+  const renderTicketRow = (ticket, isPrint = false) => {
+    return (
+      <tr key={ticket.id} className={`hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors ${isPrint ? '' : 'no-print'}`}>
+        <td className="py-4 px-6 font-mono text-xs text-gray-900 dark:text-white">
+          {ticket.id.substring(0, 8).toUpperCase()}
+        </td>
+        <td className="py-4 px-6">
+          <div className="font-semibold text-gray-900 dark:text-white">{ticket.users?.full_name || 'Visitor / Guest'}</div>
+          <div className="text-xs text-gray-500 dark:text-zinc-400">{ticket.users?.email || 'No email'}</div>
+        </td>
+        <td className="py-4 px-6">
+          <div className="font-semibold text-gray-900 dark:text-white">{ticket.parking_slots?.slot_name || 'N/A'}</div>
+          <div className="text-xs text-gray-500 dark:text-zinc-400">{ticket.parking_slots?.parking_lots?.name || 'Released / Removed'}</div>
+        </td>
+        <td className="py-4 px-6 space-y-1 text-xs text-gray-500 dark:text-zinc-400">
+          <div><span className="font-bold">Book:</span> {new Date(ticket.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+          {ticket.entry_time && <div><span className="font-bold">Entry:</span> {new Date(ticket.entry_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
+          {ticket.exit_time && <div><span className="font-bold">Exit:</span> {new Date(ticket.exit_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
+        </td>
+        <td className="py-4 px-6">
+          <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+            ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+            ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+            ticket.status === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+            ticket.status === 'OVERRIDDEN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+            'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
+          }`}>
+            {ticket.status}
+          </span>
+        </td>
+        {profile?.is_super_admin && !isPrint && (
+          <td className="py-4 px-6 text-right no-print">
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setSelectedTicket(ticket);
+                  setTicketStatus(ticket.status);
+                  setIsTicketModalOpen(true);
+                }}
+                className="p-1 text-gray-400 hover:text-brand-maroon-800 dark:hover:text-white transition-colors"
+                title="Override ticket status"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setTicketToDelete(ticket)}
+                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                title="Delete ticket record"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        )}
+      </tr>
+    );
+  };
+
+  // Helper function to render an audit log row (handles print and interactive states)
+  const renderAuditLogRow = (log) => {
+    const actor = log.users || {};
+    const actorRole = actor.is_super_admin ? 'Super Admin' : actor.is_admin ? 'Admin' : 'Unknown';
+    return (
+      <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+        <td className="py-4 px-6 text-xs text-gray-500 dark:text-zinc-400 font-mono whitespace-nowrap">
+          {new Date(log.created_at).toLocaleString()}
+        </td>
+        <td className="py-4 px-6">
+          <div className="font-semibold text-gray-900 dark:text-white">{actor.full_name || 'System / Unknown'}</div>
+          <div className="text-xs text-gray-500 dark:text-zinc-400">{actorRole}</div>
+        </td>
+        <td className="py-4 px-6">
+          <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+            log.action?.startsWith('ADD') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+            log.action?.startsWith('DELETE') ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+            log.action?.startsWith('UPDATE') || log.action?.includes('ROLE') ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+            log.action?.includes('OVERRIDE') ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+            'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
+          }`}>
+            {log.action?.replace(/_/g, ' ')}
+          </span>
+        </td>
+        <td className="py-4 px-6 font-mono text-xs text-gray-900 dark:text-white">
+          <div className="font-medium text-gray-950 dark:text-gray-200">{log.target_type}</div>
+          {log.target_id && <div className="text-xs text-gray-500 dark:text-zinc-400 font-mono">{log.target_id.substring(0, 8).toUpperCase()}</div>}
+        </td>
+        <td className="py-4 px-6 text-xs text-gray-600 dark:text-zinc-400 max-w-xs break-words">
+          {log.details}
+        </td>
+      </tr>
+    );
+  };
 
   if (isVerifying) {
     return <LoadingScreen message="Verifying Admin Access..." />;
@@ -661,6 +899,12 @@ export default function AdminManagementPage() {
                     />
                   </div>
                   <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <input
+                      type="date"
+                      value={userDateFilter}
+                      onChange={(e) => setUserDateFilter(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm text-gray-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-brand-maroon-800 [&::-webkit-calendar-picker-indicator]:dark:invert"
+                    />
                     <select
                       value={userRoleFilter}
                       onChange={(e) => setUserRoleFilter(e.target.value)}
@@ -709,82 +953,57 @@ export default function AdminManagementPage() {
                   {isLoadingData ? (
                     <div className="p-12 text-center text-gray-500">Loading user directories...</div>
                   ) : filteredUsers.length > 0 ? (
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-gray-400 select-none">
-                          <th className="py-4 px-6">Name</th>
-                          <th className="py-4 px-6">PUP ID</th>
-                          <th className="py-4 px-6">Email</th>
-                          <th className="py-4 px-6">RFID Tag</th>
-                          <th className="py-4 px-6">Role</th>
-                          {profile?.is_super_admin && <th className="py-4 px-6 text-right no-print">Actions</th>}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
-                        {filteredUsers.map(user => {
-                          const isGuest = user.pup_id?.startsWith('VISITOR-');
-                          return (
-                            <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                              <td className="py-4 px-6 font-semibold text-gray-900 dark:text-white">
-                                <div className="flex items-center gap-3">
-                                  {user.avatar_url ? (
-                                    <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-full bg-brand-maroon-50 dark:bg-zinc-800 text-brand-maroon-800 dark:text-zinc-400 flex items-center justify-center text-xs font-bold shrink-0">
-                                      {user.full_name.charAt(0).toUpperCase()}
-                                    </div>
-                                  )}
-                                  <span>{user.full_name}</span>
-                                </div>
-                              </td>
-                              <td className="py-4 px-6 font-mono text-xs text-gray-600 dark:text-zinc-400">{user.pup_id}</td>
-                              <td className="py-4 px-6 text-gray-500 dark:text-zinc-400">{user.email || '—'}</td>
-                              <td className="py-4 px-6 font-mono text-xs text-gray-500 dark:text-zinc-400">{user.rfid_tag || 'Not Bound'}</td>
-                              <td className="py-4 px-6">
-                                <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                  isGuest ? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' :
-                                  user.is_super_admin ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                                  user.is_admin ? 'bg-brand-maroon-100 text-brand-maroon-800 dark:bg-brand-maroon-900/30 dark:text-brand-maroon-400' :
-                                  'bg-brand-gold-100 text-brand-gold-800 dark:bg-brand-gold-900/30 dark:text-brand-gold-400'
-                                }`}>
-                                  {isGuest ? 'Guest' : user.is_super_admin ? 'Super Admin' : user.is_admin ? 'Admin' : 'User'}
-                                </span>
-                              </td>
-                              {profile?.is_super_admin && (
-                                <td className="py-4 px-6 text-right no-print">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedUser(user);
-                                        setAdminFlag(user.is_admin);
-                                        setSuperAdminFlag(user.is_super_admin);
-                                        setIsRoleModalOpen(true);
-                                      }}
-                                      className="p-1 text-gray-400 hover:text-brand-maroon-800 dark:hover:text-white transition-colors"
-                                      title="Edit privileges"
-                                    >
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                      </svg>
-                                    </button>
-                                    <button
-                                      onClick={() => setUserToDelete(user)}
-                                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                      title="Delete profile"
-                                      disabled={user.id === profile.id}
-                                    >
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </td>
-                              )}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-gray-400 select-none">
+                            <th className="py-4 px-6">Name</th>
+                            <th className="py-4 px-6">PUP ID</th>
+                            <th className="py-4 px-6">Email</th>
+                            <th className="py-4 px-6">RFID Tag</th>
+                            <th className="py-4 px-6">Role</th>
+                            {profile?.is_super_admin && <th className="py-4 px-6 text-right no-print">Actions</th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm no-print">
+                          {paginatedUsers.map(user => renderUserRow(user, false))}
+                        </tbody>
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm hidden print:table-row-group">
+                          {filteredUsers.map(user => renderUserRow(user, true))}
+                        </tbody>
+                      </table>
+                      {/* Pagination Controls */}
+                      {totalUsersPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50 no-print select-none">
+                          <span className="text-xs text-gray-500 dark:text-zinc-400">
+                            Showing {Math.min(filteredUsers.length, (usersPage - 1) * ITEMS_PER_PAGE + 1)} to {Math.min(filteredUsers.length, usersPage * ITEMS_PER_PAGE)} of {filteredUsers.length} entries
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setUsersPage(p => Math.max(1, p - 1))}
+                              disabled={usersPage === 1}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                              </svg>
+                            </button>
+                            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">
+                              Page {usersPage} of {totalUsersPages}
+                            </span>
+                            <button
+                              onClick={() => setUsersPage(p => Math.min(totalUsersPages, p + 1))}
+                              disabled={usersPage === totalUsersPages}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="p-12 text-center text-gray-500">No users found matching your search.</div>
                   )}
@@ -819,6 +1038,12 @@ export default function AdminManagementPage() {
                     />
                   </div>
                   <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <input
+                      type="date"
+                      value={ticketDateFilter}
+                      onChange={(e) => setTicketDateFilter(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm text-gray-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-brand-maroon-800 [&::-webkit-calendar-picker-indicator]:dark:invert"
+                    />
                     <select
                       value={ticketStatusFilter}
                       onChange={(e) => setTicketStatusFilter(e.target.value)}
@@ -868,79 +1093,57 @@ export default function AdminManagementPage() {
                   {isLoadingData ? (
                     <div className="p-12 text-center text-gray-500">Loading session logs...</div>
                   ) : filteredTickets.length > 0 ? (
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-gray-400 select-none">
-                          <th className="py-4 px-6">Ticket ID</th>
-                          <th className="py-4 px-6">User</th>
-                          <th className="py-4 px-6">Lot / Slot</th>
-                          <th className="py-4 px-6">Timestamps</th>
-                          <th className="py-4 px-6">Status</th>
-                          {profile?.is_super_admin && <th className="py-4 px-6 text-right no-print">Actions</th>}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
-                        {filteredTickets.map(ticket => (
-                          <tr key={ticket.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                            <td className="py-4 px-6 font-mono text-xs text-gray-900 dark:text-white">
-                              {ticket.id.substring(0, 8).toUpperCase()}
-                            </td>
-                            <td className="py-4 px-6">
-                              <div className="font-semibold text-gray-900 dark:text-white">{ticket.users?.full_name || 'Visitor / Guest'}</div>
-                              <div className="text-xs text-gray-500 dark:text-zinc-400">{ticket.users?.email || 'No email'}</div>
-                            </td>
-                            <td className="py-4 px-6">
-                              <div className="font-semibold text-gray-900 dark:text-white">{ticket.parking_slots?.slot_name || 'N/A'}</div>
-                              <div className="text-xs text-gray-500 dark:text-zinc-400">{ticket.parking_slots?.parking_lots?.name || 'Released / Removed'}</div>
-                            </td>
-                            <td className="py-4 px-6 space-y-1 text-xs text-gray-500 dark:text-zinc-400">
-                              <div><span className="font-bold">Book:</span> {new Date(ticket.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
-                              {ticket.entry_time && <div><span className="font-bold">Entry:</span> {new Date(ticket.entry_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
-                              {ticket.exit_time && <div><span className="font-bold">Exit:</span> {new Date(ticket.exit_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>}
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                ticket.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                ticket.status === 'RESERVED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                ticket.status === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                ticket.status === 'OVERRIDDEN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                                'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
-                              }`}>
-                                {ticket.status}
-                              </span>
-                            </td>
-                            {profile?.is_super_admin && (
-                              <td className="py-4 px-6 text-right no-print">
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedTicket(ticket);
-                                      setTicketStatus(ticket.status);
-                                      setIsTicketModalOpen(true);
-                                    }}
-                                    className="p-1 text-gray-400 hover:text-brand-maroon-800 dark:hover:text-white transition-colors"
-                                    title="Override ticket status"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    onClick={() => setTicketToDelete(ticket)}
-                                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                    title="Delete ticket record"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              </td>
-                            )}
+                    <>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 text-xs font-bold uppercase tracking-wider text-gray-400 select-none">
+                            <th className="py-4 px-6">Ticket ID</th>
+                            <th className="py-4 px-6">User</th>
+                            <th className="py-4 px-6">Lot / Slot</th>
+                            <th className="py-4 px-6">Timestamps</th>
+                            <th className="py-4 px-6">Status</th>
+                            {profile?.is_super_admin && <th className="py-4 px-6 text-right no-print">Actions</th>}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm no-print">
+                          {paginatedTickets.map(ticket => renderTicketRow(ticket, false))}
+                        </tbody>
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm hidden print:table-row-group">
+                          {filteredTickets.map(ticket => renderTicketRow(ticket, true))}
+                        </tbody>
+                      </table>
+                      {/* Pagination Controls */}
+                      {totalTicketsPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50 no-print select-none">
+                          <span className="text-xs text-gray-500 dark:text-zinc-400">
+                            Showing {Math.min(filteredTickets.length, (ticketsPage - 1) * ITEMS_PER_PAGE + 1)} to {Math.min(filteredTickets.length, ticketsPage * ITEMS_PER_PAGE)} of {filteredTickets.length} entries
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setTicketsPage(p => Math.max(1, p - 1))}
+                              disabled={ticketsPage === 1}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                              </svg>
+                            </button>
+                            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">
+                              Page {ticketsPage} of {totalTicketsPages}
+                            </span>
+                            <button
+                              onClick={() => setTicketsPage(p => Math.min(totalTicketsPages, p + 1))}
+                              disabled={ticketsPage === totalTicketsPages}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="p-12 text-center text-gray-500">No tickets found matching filters.</div>
                   )}
@@ -975,6 +1178,12 @@ export default function AdminManagementPage() {
                     />
                   </div>
                   <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <input
+                      type="date"
+                      value={auditDateFilter}
+                      onChange={(e) => setAuditDateFilter(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm text-gray-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-brand-maroon-800 [&::-webkit-calendar-picker-indicator]:dark:invert"
+                    />
                     <select
                       value={auditActionFilter}
                       onChange={(e) => setAuditActionFilter(e.target.value)}
@@ -1017,53 +1226,59 @@ export default function AdminManagementPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  {filteredAuditLogs.length > 0 ? (
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/10 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                          <th className="py-4 px-6">Timestamp</th>
-                          <th className="py-4 px-6">Actor</th>
-                          <th className="py-4 px-6">Action</th>
-                          <th className="py-4 px-6">Target</th>
-                          <th className="py-4 px-6">Details</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm">
-                        {filteredAuditLogs.map(log => {
-                          const actor = log.users || {};
-                          const actorRole = actor.is_super_admin ? 'Super Admin' : actor.is_admin ? 'Admin' : 'Unknown';
-                          return (
-                            <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                              <td className="py-4 px-6 text-xs text-gray-500 dark:text-zinc-400 font-mono whitespace-nowrap">
-                                {new Date(log.created_at).toLocaleString()}
-                              </td>
-                              <td className="py-4 px-6">
-                                <div className="font-semibold text-gray-900 dark:text-white">{actor.full_name || 'System / Unknown'}</div>
-                                <div className="text-xs text-gray-500 dark:text-zinc-400">{actorRole}</div>
-                              </td>
-                              <td className="py-4 px-6">
-                                <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                  log.action?.startsWith('ADD') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                                  log.action?.startsWith('DELETE') ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                  log.action?.startsWith('UPDATE') || log.action?.includes('ROLE') ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                  log.action?.includes('OVERRIDE') ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                                  'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'
-                                }`}>
-                                  {log.action?.replace(/_/g, ' ')}
-                                </span>
-                              </td>
-                              <td className="py-4 px-6 font-mono text-xs text-gray-900 dark:text-white">
-                                <div className="font-medium text-gray-950 dark:text-gray-200">{log.target_type}</div>
-                                {log.target_id && <div className="text-xs text-gray-500 dark:text-zinc-400 font-mono">{log.target_id.substring(0, 8).toUpperCase()}</div>}
-                              </td>
-                              <td className="py-4 px-6 text-xs text-gray-600 dark:text-zinc-400 max-w-xs break-words">
-                                {log.details}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  {isLoadingData ? (
+                    <div className="p-12 text-center text-gray-500">Loading audit logs...</div>
+                  ) : filteredAuditLogs.length > 0 ? (
+                    <>
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/10 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
+                            <th className="py-4 px-6">Timestamp</th>
+                            <th className="py-4 px-6">Actor</th>
+                            <th className="py-4 px-6">Action</th>
+                            <th className="py-4 px-6">Target</th>
+                            <th className="py-4 px-6">Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm no-print">
+                          {paginatedAuditLogs.map(log => renderAuditLogRow(log))}
+                        </tbody>
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-sm hidden print:table-row-group">
+                          {filteredAuditLogs.map(log => renderAuditLogRow(log))}
+                        </tbody>
+                      </table>
+                      {/* Pagination Controls */}
+                      {totalAuditLogsPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50 no-print select-none">
+                          <span className="text-xs text-gray-500 dark:text-zinc-400">
+                            Showing {Math.min(filteredAuditLogs.length, (auditLogsPage - 1) * ITEMS_PER_PAGE + 1)} to {Math.min(filteredAuditLogs.length, auditLogsPage * ITEMS_PER_PAGE)} of {filteredAuditLogs.length} entries
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setAuditLogsPage(p => Math.max(1, p - 1))}
+                              disabled={auditLogsPage === 1}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                              </svg>
+                            </button>
+                            <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">
+                              Page {auditLogsPage} of {totalAuditLogsPages}
+                            </span>
+                            <button
+                              onClick={() => setAuditLogsPage(p => Math.min(totalAuditLogsPages, p + 1))}
+                              disabled={auditLogsPage === totalAuditLogsPages}
+                              className="p-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="p-12 text-center text-gray-500">No audit logs found matching filters.</div>
                   )}
@@ -1140,13 +1355,65 @@ export default function AdminManagementPage() {
               <CardTitle className="text-red-700 dark:text-red-400">Delete Profile</CardTitle>
               <CardDescription>Confirm deletion of account</CardDescription>
             </CardHeader>
-            <CardContent className="p-6 text-sm text-gray-600 dark:text-zinc-400">
-              Are you sure you want to delete the profile of <strong className="text-gray-900 dark:text-white">{userToDelete.full_name}</strong>? 
-              <p className="mt-2 text-xs text-red-500">Warning: This action deletes their profile data immediately. Active tickets referencing this user will be set to NULL.</p>
+            <CardContent className="p-6 text-sm text-gray-600 dark:text-zinc-400 space-y-4">
+              <div>
+                Are you sure you want to delete the profile of <strong className="text-gray-900 dark:text-white">{userToDelete.full_name}</strong>? 
+                <p className="mt-2 text-xs text-red-500">Warning: This action deletes their profile data immediately. Active tickets referencing this user will be set to NULL.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">Confirm Super Admin Password</label>
+                <Input
+                  id="confirmPasswordUser"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Enter your password to verify"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none pr-1"
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                      )}
+                    </button>
+                  }
+                />
+              </div>
+              {/* hCaptcha Verification */}
+              {process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ? (
+                <div className="flex justify-center my-4 min-h-[78px]">
+                  <HCaptcha
+                    ref={captchaRef}
+                    sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-xs text-red-500 my-4">
+                  Error: hCaptcha Site Key is not configured.
+                </div>
+              )}
             </CardContent>
             <div className="p-6 pt-0 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
-              <Button type="button" variant="primary" className="!bg-red-600 hover:!bg-red-700 text-white" isLoading={isSubmitting} onClick={handleDeleteUser}>
+              <Button 
+                type="button" 
+                variant="primary" 
+                className="!bg-red-600 hover:!bg-red-700 text-white" 
+                isLoading={isSubmitting} 
+                disabled={!confirmPassword || (process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY && !captchaToken)} 
+                onClick={handleDeleteUser}
+              >
                 Confirm Delete
               </Button>
             </div>
@@ -1201,13 +1468,65 @@ export default function AdminManagementPage() {
               <CardTitle className="text-red-700 dark:text-red-400">Delete Ticket Log</CardTitle>
               <CardDescription>Confirm delete ticket record</CardDescription>
             </CardHeader>
-            <CardContent className="p-6 text-sm text-gray-600 dark:text-zinc-400">
-              Are you sure you want to delete the log for ticket <strong className="font-mono text-gray-900 dark:text-white">#{ticketToDelete.id.substring(0, 8).toUpperCase()}</strong>?
-              <p className="mt-2 text-xs text-red-500">Warning: This operation deletes the ticket history permanently. If the ticket is active/reserved, the parking slot will be set back to AVAILABLE.</p>
+            <CardContent className="p-6 text-sm text-gray-600 dark:text-zinc-400 space-y-4">
+              <div>
+                Are you sure you want to delete the log for ticket <strong className="font-mono text-gray-900 dark:text-white">#{ticketToDelete.id.substring(0, 8).toUpperCase()}</strong>?
+                <p className="mt-2 text-xs text-red-500">Warning: This operation deletes the ticket history permanently. If the ticket is active/reserved, the parking slot will be set back to AVAILABLE.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">Confirm Super Admin Password</label>
+                <Input
+                  id="confirmPasswordTicket"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Enter your password to verify"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none pr-1"
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                      )}
+                    </button>
+                  }
+                />
+              </div>
+              {/* hCaptcha Verification */}
+              {process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY ? (
+                <div className="flex justify-center my-4 min-h-[78px]">
+                  <HCaptcha
+                    ref={captchaRef}
+                    sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-xs text-red-500 my-4">
+                  Error: hCaptcha Site Key is not configured.
+                </div>
+              )}
             </CardContent>
             <div className="p-6 pt-0 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => setTicketToDelete(null)}>Cancel</Button>
-              <Button type="button" variant="primary" className="!bg-red-600 hover:!bg-red-700 text-white" isLoading={isSubmitting} onClick={handleDeleteTicket}>
+              <Button 
+                type="button" 
+                variant="primary" 
+                className="!bg-red-600 hover:!bg-red-700 text-white" 
+                isLoading={isSubmitting} 
+                disabled={!confirmPassword || (process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY && !captchaToken)} 
+                onClick={handleDeleteTicket}
+              >
                 Confirm Delete
               </Button>
             </div>

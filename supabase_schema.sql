@@ -188,3 +188,26 @@ BEGIN
 END;
 $$;
 
+-- Function to delete a user from auth.users (cascades to public.users)
+-- restricted strictly to Super Admins
+CREATE OR REPLACE FUNCTION public.delete_user_by_id(target_user_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Verify that the caller is a super admin
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = auth.uid() AND is_super_admin = true
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized: Only super admins can delete users';
+  END IF;
+
+  -- Delete from auth.users (will cascade delete public.users)
+  DELETE FROM auth.users WHERE id = target_user_id;
+  RETURN FOUND;
+END;
+$$;
+

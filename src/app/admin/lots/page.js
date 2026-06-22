@@ -179,6 +179,13 @@ export default function AdminLotsPage() {
   async function handleAddSlot(e) {
     e.preventDefault();
     if (!selectedLot || !newSlotName) return;
+    
+    // Client-side validation: enforce max 30 slots per lot
+    if (slots.length >= 30) {
+      setError('Cannot add slot. Maximum capacity of 30 slots reached for this lot.');
+      return;
+    }
+
     setIsAddingSlot(true);
     try {
       const res = await fetch('/api/parking/slots', {

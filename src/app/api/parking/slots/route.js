@@ -22,6 +22,20 @@ export async function POST(request) {
       return NextResponse.json({ error: 'lot_id and slot_name are required' }, { status: 400 });
     }
 
+    // Enforce max 30 slots per lot constraint
+    const { count, error: countError } = await supabase
+      .from('parking_slots')
+      .select('id', { count: 'exact', head: true })
+      .eq('lot_id', lot_id);
+
+    if (countError) {
+      return NextResponse.json({ error: countError.message }, { status: 400 });
+    }
+
+    if (count >= 30) {
+      return NextResponse.json({ error: 'Cannot add slot. Maximum limit of 30 slots reached for this lot.' }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from('parking_slots')
       .insert({ lot_id, slot_name, status: status || 'AVAILABLE' })
